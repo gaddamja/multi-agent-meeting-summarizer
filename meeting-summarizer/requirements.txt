@@ -1,0 +1,24 @@
+# Core dependencies
+openai-whisper>=20230314
+pyannote.audio>=3.0
+soundfile>=0.12.1
+numpy>=1.21
+pyyaml>=6.0
+
+# Hugging Face authentication and SSL
+huggingface_hub>=0.17.0
+certifi>=2023.7.22
+
+# Audio processing (install separately for your platform via PyTorch official docs)
+# For macOS CPU: pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+# For GPU: follow https://pytorch.org/get-started/locally/
+torch>=2.0.0
+torchaudio>=2.0.0
+
+# System dependency (install separately)
+# macOS: brew install ffmpeg
+# Ubuntu/Debian: sudo apt-get install ffmpeg
+# Windows: choco install ffmpeg or download from https://ffmpeg.org/download.html
+ 
+# Hugging Face datasets helper
+datasets>=2.13.0

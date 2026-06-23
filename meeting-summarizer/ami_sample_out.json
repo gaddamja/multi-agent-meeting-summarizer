@@ -1,0 +1,205 @@
+{
+  "file": "sample_audio.mp3",
+  "model": "small",
+  "transcript": " Good evening. Welcome to the Denver City Council meeting of Monday, May 8th, 2017. My name is Kelly Vales. I'm your Council Secretary. According to our rules of procedure when our Council President Albus Brooks and Council President Pro Tem Jolin Clark are both absent. The Council Secretary calls the meeting to order. Please rise and join Councilman Herndon in the Pledge of Allegiance. I pledge allegiance to the flag of the United States of America and to the republic for which it stands, one nation, under God, and the physical, with liberty and justice for all. Madam Secretary, roll call. Here. Mark. Espanosa. Here. 10. 4. Elmore. Here. Cash. Here. Vertega. Sussner. Five present. We have five members present. There is not a quorum this evening. Many of the Council members are participating in an urban exploration trip in Portland, Oregon, pursuant to Section 3.3.4 of the City Charter. Because there is not a quorum of seven Council members present, all of tonight's business will move to next week, to Monday, May 15th. Seeing no other business before this body, except to wish Council woman can each a very happy birthday, this meeting is adjourned. Happy birthday. Thank you. Now, what size do you need? Air conditioners are not a one size or type fits all. Before you buy an air conditioner, you need to consider the size of your home and the cost to operate the unit per hour. Do you want a room air conditioner, which costs less but cools a smaller area, or do you want a central air conditioner, which cools your entire house but costs more? Do your homework. Now, let's discuss evaporative coolers. In low humidity areas, evaporating water into the air provides a natural and energy efficient means of cooling. Evaporative coolers, also called swamp coolers, cool outdoor air by passing it over water saturated pads, causing the water to evaporate into it. Evaporative coolers cost about one half as much to install as central air conditioners and use about one quarter as much energy. However, they require more frequent maintenance than refrigerated air conditioners, and they're suitable only for areas with low humidity. Watch the maintenance tips at the end of this segment to learn more. And finally, fans. When air moves around in your home, it creates a wind chill effect. A mere two mile an hour breeze will make your home feel four degrees cooler, and therefore, you can set your thermostat a bit higher. Ceiling fans and portable oscillating fans are cheap to run, and they make your house feel cooler. You can also install a whole house fan to draw the hot air out of your home. A whole house fan draws cool outdoor air inside through open windows and exhaust hot room air through the attic to the outside. The result is excellent ventilation, lower indoor temperatures, and improved evaporative cooling. But remember, there are many low cost, no cost ways that you can keep your home cool. You should focus on these long before you turn on your AC, or even before you purchase an AC. But if you are going to purchase a new cooling system, remember to get one that's energy efficient and the correct size for your home. Wait, wait, don't go away, there's more. After this segment of the presentation is over, you're going to be given the option to view maintenance tips about air conditioners and evaporative coolers. Now all of these tips are brought to you by the People at Excel Energy. Thanks for watching.",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 7.54,
+      "speaker": "unknown",
+      "text": "Good evening. Welcome to the Denver City Council meeting of Monday, May 8th, 2017. My name is"
+    },
+    {
+      "start": 7.54,
+      "end": 12.6,
+      "speaker": "unknown",
+      "text": "Kelly Vales. I'm your Council Secretary. According to our rules of procedure when our Council"
+    },
+    {
+      "start": 12.6,
+      "end": 18.76,
+      "speaker": "unknown",
+      "text": "President Albus Brooks and Council President Pro Tem Jolin Clark are both absent. The"
+    },
+    {
+      "start": 18.76,
+      "end": 24.64,
+      "speaker": "unknown",
+      "text": "Council Secretary calls the meeting to order. Please rise and join Councilman Herndon in"
+    },
+    {
+      "start": 24.64,
+      "end": 31.64,
+      "speaker": "unknown",
+      "text": "the Pledge of Allegiance. I pledge allegiance to the flag of the United States of America"
+    },
+    {
+      "start": 31.64,
+      "end": 38.120000000000005,
+      "speaker": "unknown",
+      "text": "and to the republic for which it stands, one nation, under God, and the physical, with"
+    },
+    {
+      "start": 38.120000000000005,
+      "end": 44.36,
+      "speaker": "unknown",
+      "text": "liberty and justice for all. Madam Secretary, roll call."
+    },
+    {
+      "start": 44.36,
+      "end": 54.36,
+      "speaker": "unknown",
+      "text": "Here."
+    },
+    {
+      "start": 54.36,
+      "end": 56.36,
+      "speaker": "unknown",
+      "text": "Mark."
+    },
+    {
+      "start": 56.36,
+      "end": 60.36,
+      "speaker": "unknown",
+      "text": "Espanosa. Here."
+    },
+    {
+      "start": 60.36,
+      "end": 62.36,
+      "speaker": "unknown",
+      "text": "10."
+    },
+    {
+      "start": 62.36,
+      "end": 64.36,
+      "speaker": "unknown",
+      "text": "4."
+    },
+    {
+      "start": 64.36,
+      "end": 66.36,
+      "speaker": "unknown",
+      "text": "Elmore."
+    },
+    {
+      "start": 66.36,
+      "end": 68.36,
+      "speaker": "unknown",
+      "text": "Here."
+    },
+    {
+      "start": 68.36,
+      "end": 70.36,
+      "speaker": "unknown",
+      "text": "Cash."
+    },
+    {
+      "start": 70.36,
+      "end": 72.36,
+      "speaker": "unknown",
+      "text": "Here."
+    },
+    {
+      "start": 72.36,
+      "end": 74.36,
+      "speaker": "unknown",
+      "text": "Vertega."
+    },
+    {
+      "start": 74.36,
+      "end": 76.36,
+      "speaker": "unknown",
+      "text": "Sussner."
+    },
+    {
+      "start": 76.36,
+      "end": 78.36,
+      "speaker": "unknown",
+      "text": "Five present."
+    },
+    {
+      "start": 78.36,
+      "end": 86.36,
+      "speaker": "unknown",
+      "text": "We have five members present. There is not a quorum this evening. Many of the Council members are"
+    },
+    {
+      "start": 86.36,
+      "end": 96.36,
+      "speaker": "unknown",
+      "text": "participating in an urban exploration trip in Portland, Oregon, pursuant to Section 3.3.4 of the City"
+    },
+    {
+      "start": 96.36,
+      "end": 101.36,
+      "speaker": "unknown",
+      "text": "Charter. Because there is not a quorum of seven Council members present, all of tonight's business"
+    },
+    {
+      "start": 102.36,
+      "end": 108.36,
+      "speaker": "unknown",
+      "text": "will move to next week, to Monday, May 15th. Seeing no other business before this body, except to wish Council"
+    },
+    {
+      "start": 108.36,
+      "end": 113.36,
+      "speaker": "unknown",
+      "text": "woman can each a very happy birthday, this meeting is adjourned."
+    },
+    {
+      "start": 113.36,
+      "end": 115.36,
+      "speaker": "unknown",
+      "text": "Happy birthday."
+    },
+    {
+      "start": 131.36,
+      "end": 133.36,
+      "speaker": "unknown",
+      "text": "Thank you."
+    },
+    {
+      "start": 161.36,
+      "end": 188.36,
+      "speaker": "unknown",
+      "text": "Now, what size do you need? Air conditioners are not a one size or type fits all. Before you buy an air conditioner, you need to consider the size of your home and the cost to operate the unit per hour. Do you want a room air conditioner, which costs less but cools a smaller area, or do you want a central air conditioner, which cools your entire house but costs more? Do your homework. Now, let's discuss evaporative coolers. In low humidity areas, evaporating water into the air provides a natural and energy efficient"
+    },
+    {
+      "start": 191.36,
+      "end": 216.36,
+      "speaker": "unknown",
+      "text": "means of cooling. Evaporative coolers, also called swamp coolers, cool outdoor air by passing it over water saturated pads, causing the water to evaporate into it. Evaporative coolers cost about one half as much to install as central air conditioners and use about one quarter as much energy. However, they require more frequent maintenance than refrigerated air conditioners, and they're suitable only for areas with low humidity."
+    },
+    {
+      "start": 216.36,
+      "end": 231.36,
+      "speaker": "unknown",
+      "text": "Watch the maintenance tips at the end of this segment to learn more. And finally, fans. When air moves around in your home, it creates a wind chill effect. A mere two mile an hour breeze will make your home feel four degrees cooler, and therefore, you can set your thermostat a bit higher."
+    },
+    {
+      "start": 231.36,
+      "end": 253.36,
+      "speaker": "unknown",
+      "text": "Ceiling fans and portable oscillating fans are cheap to run, and they make your house feel cooler. You can also install a whole house fan to draw the hot air out of your home. A whole house fan draws cool outdoor air inside through open windows and exhaust hot room air through the attic to the outside. The result is excellent ventilation, lower indoor temperatures, and improved evaporative cooling."
+    },
+    {
+      "start": 253.36,
+      "end": 269.36,
+      "speaker": "unknown",
+      "text": "But remember, there are many low cost, no cost ways that you can keep your home cool. You should focus on these long before you turn on your AC, or even before you purchase an AC. But if you are going to purchase a new cooling system, remember to get one that's energy efficient and the correct size for your home."
+    },
+    {
+      "start": 269.36,
+      "end": 279.36,
+      "speaker": "unknown",
+      "text": "Wait, wait, don't go away, there's more. After this segment of the presentation is over, you're going to be given the option to view maintenance tips about air conditioners and evaporative coolers."
+    },
+    {
+      "start": 279.36,
+      "end": 285.36,
+      "speaker": "unknown",
+      "text": "Now all of these tips are brought to you by the People at Excel Energy. Thanks for watching."
+    }
+  ]
+}
