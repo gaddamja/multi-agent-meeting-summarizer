@@ -69,13 +69,27 @@ source ~/.zshrc
 
 ## Usage
 
+### 1) Transcribe audio only
 ```bash
 python scripts/run_transcription.py /path/to/meeting.mp3 --model small --output out.json
 ```
 
+### 2) Summarize an existing transcript
+```bash
+python scripts/run_summary.py --transcript out.json --output summary.json
+```
+
+### 3) Transcribe and summarize in one step
+```bash
+python scripts/run_summary.py --audio /path/to/meeting.mp3 --output summary.json
+```
+
+> This command runs the transcription agent first, then executes the summary agent on the generated transcript.
+
 **Options:**
 - `--model` — Whisper model size: `tiny`, `base`, `small`, `medium`, `large` (default: `small`)
 - `--output` — Output JSON file path (default: `transcript.json`)
+- `--hf-token` — Hugging Face token for Mistral-7B inference (or use `HF_TOKEN` environment variable)
 
 ## Output Format
 
