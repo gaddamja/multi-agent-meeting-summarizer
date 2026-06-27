@@ -1,0 +1,22 @@
+{
+  "executive_summary": "The Denver City Council meeting on May 8th, 2017, was adjourned due to lack of quorum. The meeting covered information on air conditioning types and maintenance tips, provided by Excel Energy.",
+  "key_decisions": [],
+  "discussion_topics": [
+    {
+      "topic": "Air Conditioning Types",
+      "positions": [
+        "Room air conditioners are less expensive but cool smaller areas.",
+        "Central air conditioners cool entire houses but are more expensive.",
+        "Evaporative coolers cost about half as much to install as central air conditioners and use about a quarter as much energy."
+      ]
+    },
+    {
+      "topic": "Maintenance Tips",
+      "positions": [
+        "Evaporative coolers require more frequent maintenance.",
+        "Fans can create a wind chill effect, making homes feel cooler."
+      ]
+    }
+  ],
+  "unresolved_items": []
+}
