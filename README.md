@@ -1,6 +1,50 @@
 # Meeting Transcription — LangGraph-style Multi-Agent Prototype
 
-This project provides a prototype multi-agent system that converts meeting audio (MP3/WAV) into actionable outputs. It includes a Transcription Agent that uses OpenAI Whisper (local) for speech-to-text and `pyannote.audio` for speaker diarization, producing timestamped, speaker-labelled transcripts.
+This project provides a prototype multi-agent system that converts meeting audio (MP3/WAV) into actionable outputs. It includes:
+
+- **Transcription Agent** — OpenAI Whisper (local) + pyannote.audio speaker diarization
+- **Summary Agent** — Meeting-wide summarization using Mistral-7B
+- **Action Item Agent** — Identifies tasks, assignees, and deadlines from transcripts
+
+## Architecture
+
+This repository implements a LangGraph-style agentic flow via a lightweight `StateGraph`.
+The pipeline is defined as a sequence of state nodes that execute in order and pass context between them.
+
+The core flow is:
+
+1. `transcription`
+   - Uses `src.agents.transcription_agent` to transcribe audio and optionally apply speaker diarization.
+   - Produces a structured transcript JSON with `transcript` and `segments`.
+2. `summary_generation`
+   - Uses `src.agents.summary_agent` to summarize the transcript into a structured JSON summary.
+3. `action_extraction`
+   - Uses `src.agents.action_item_agent` to extract tasks, assignees, deadlines, priorities, and context quotes.
+4. `final_report`
+   - Assembles the transcript, summary, and action items into a single final report.
+
+The state graph is built in `src/state_graph.py` and executed by the orchestrator in `src/orchestrator.py`.
+Each step is implemented as a `StateNode` with an `action` function and a `next_state` transition.
+
+A simple representation of the flow:
+
+```
+Audio Input
+      |
+      v
+Transcription Agent
+      |
+      v
+Summary Agent
+      |
+      v
+Action Item Agent
+      |
+      v
+Final Report
+```
+
+This design makes the pipeline easy to extend with new graph nodes or alternate agent paths.
 
 ## Installation
 
@@ -86,13 +130,58 @@ python scripts/run_summary.py --audio /path/to/meeting.mp3 --output summary.json
 
 > This command runs the transcription agent first, then executes the summary agent on the generated transcript.
 
+### 4) Extract action items from transcript
+```bash
+python scripts/run_action_items.py out.json --output action_items.json
+```
+
+> Extracts tasks, assignees, and deadlines with cross-referenced speaker labels.
+
+### 5) Extract action items with different format
+```bash
+python scripts/run_action_items.py out.json --output actions.md --format markdown
+python scripts/run_action_items.py out.json --output actions.txt --format table
+```
+
+### 6) Run complete end-to-end pipeline
+The orchestrator now uses a `StateGraph` pipeline internally:
+`Transcription -> Summary Generation -> Action Extraction -> Final Report`.
+
+```bash
+.venv/bin/python3 -c "
+from src.orchestrator import build_default_orchestrator
+orch = build_default_orchestrator()
+result = orch.run_full_pipeline(
+    audio_path='sample_audio.mp3',
+    transcript_output='transcript.json',
+    summary_output='summary.json',
+    action_items_output='action_items.json'
+)
+print('Pipeline complete!')
+print(result['final_report'])
+"
+```
+
+This runs all three agents in a single StateGraph execution and produces:
+- `transcript.json`
+- `summary.json`
+- `action_items.json`
+
+> Runs transcription, summarization, and action item extraction in sequence using the new StateGraph pipeline.
+
 **Options:**
 - `--model` — Whisper model size: `tiny`, `base`, `small`, `medium`, `large` (default: `small`)
 - `--output` — Output JSON file path (default: `transcript.json`)
 - `--hf-token` — Hugging Face token for Mistral-7B inference (or use `HF_TOKEN` environment variable)
 
+**Action Items Extraction Options:**
+- `--format` — Output format: `json`, `markdown`, or `table` (default: `json`)
+- `--model` — Hugging Face model for extraction (default: `Qwen/Qwen2.5-7B-Instruct`)
+- `--hf-token` — Hugging Face API token
+
 ## Output Format
 
+### Transcript Output
 The output JSON contains:
 ```json
 {
@@ -109,6 +198,25 @@ The output JSON contains:
   ]
 }
 ```
+
+### Action Items Output
+The action items extraction produces:
+```json
+{
+  "action_items": [
+    {
+      "action_item": "Prepare budget proposal for steering committee",
+      "assignee": "Sarah",
+      "deadline": "end of week",
+      "priority": "high",
+      "context_quote": "I'll prepare the budget proposal by end of week."
+    }
+  ],
+  "total_count": 1
+}
+```
+
+See [docs/ACTION_ITEM_AGENT.md](docs/ACTION_ITEM_AGENT.md) for detailed documentation on the Action Item Agent.
 
 ## Troubleshooting
 
@@ -147,8 +255,7 @@ source .venv/bin/activate
 
 ```bash
 make install-venv   # creates .venv and installs requirements.txt
-make fetch-sample   # attempt to download an AMI sample into ami_sample.wav
-make transcribe     # run transcription on ami_sample.wav
+make transcribe     # run transcription on the included sample_audio.mp3
 ```
 
 - Build a Docker image (CPU-based):

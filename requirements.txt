@@ -5,9 +5,16 @@ soundfile>=0.12.1
 numpy>=1.21
 pyyaml>=6.0
 
+# Data validation and structured output
+# For Python 3.9: use pydantic 1.x, For Python 3.10+: use pydantic 2.x
+pydantic>=1.8,<2.0;python_version<"3.10"
+pydantic>=2.0.0;python_version>="3.10"
+
 # Hugging Face authentication and SSL
-huggingface_hub>=1.20.1
-certifi>=2023.7.22.venv/bin/python3 -m pip install huggingface_hub
+# For Python 3.9: use earlier version, For Python 3.10+: use latest
+huggingface_hub>=0.16.0,<1.20;python_version<"3.10"
+huggingface_hub>=1.20.1;python_version>="3.10"
+certifi>=2023.7.22
 
 # Audio processing (install separately for your platform via PyTorch official docs)
 # For macOS CPU: pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
@@ -19,6 +26,5 @@ torchaudio>=2.0.0
 # macOS: brew install ffmpeg
 # Ubuntu/Debian: sudo apt-get install ffmpeg
 # Windows: choco install ffmpeg or download from https://ffmpeg.org/download.html
- 
-# Hugging Face datasets helper
-datasets>=2.13.0
+
+# If you use Hugging Face datasets in the future, add it here
