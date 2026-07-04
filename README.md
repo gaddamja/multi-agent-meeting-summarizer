@@ -5,6 +5,7 @@ This project provides a prototype multi-agent system that converts meeting audio
 - **Transcription Agent** — OpenAI Whisper (local) + pyannote.audio speaker diarization
 - **Summary Agent** — Meeting-wide summarization using Mistral-7B
 - **Action Item Agent** — Identifies tasks, assignees, and deadlines from transcripts
+ - **Action History Agent** — Persists action items in SQLite, tracks status, and flags overdue/recurring items
 
 ## Architecture
 
@@ -39,6 +40,9 @@ Summary Agent
       |
       v
 Action Item Agent
+  |
+  v
+Action History Agent
       |
       v
 Final Report
@@ -156,6 +160,7 @@ result = orch.run_full_pipeline(
     transcript_output='transcript.json',
     summary_output='summary.json',
     action_items_output='action_items.json'
+  history_report_output='history_report.json'
 )
 print('Pipeline complete!')
 print(result['final_report'])
@@ -166,6 +171,7 @@ This runs all three agents in a single StateGraph execution and produces:
 - `transcript.json`
 - `summary.json`
 - `action_items.json`
+ - `history_report.json` (if requested)
 
 > Runs transcription, summarization, and action item extraction in sequence using the new StateGraph pipeline.
 
@@ -178,6 +184,9 @@ This runs all three agents in a single StateGraph execution and produces:
 - `--format` — Output format: `json`, `markdown`, or `table` (default: `json`)
 - `--model` — Hugging Face model for extraction (default: `Qwen/Qwen2.5-7B-Instruct`)
 - `--hf-token` — Hugging Face API token
+ - `--history-db` — SQLite file path for action item history (default: `action_history.db`)
+ - `--history-report-output` — Optional health report JSON output path
+ - `--reference-date` — Optional date for overdue computation, format `YYYY-MM-DD`
 
 ## Output Format
 

@@ -81,6 +81,18 @@ def build_state_graph(orchestrator: Any) -> StateGraph:
         context["action_items"] = action_items
         return context
 
+    def run_history_tracking(context: Dict[str, Any]) -> Dict[str, Any]:
+        action_items = context["action_items"]
+        history_report = orchestrator.run_history_tracking(
+            action_items,
+            meeting_source=context.get("audio_path"),
+            meeting_date=context.get("meeting_date"),
+            history_db_path=context.get("history_db_path", "action_history.db"),
+            reference_date=context.get("reference_date"),
+        )
+        context["action_history_report"] = history_report
+        return context
+
     def run_final_report(context: Dict[str, Any]) -> Dict[str, Any]:
         report = {
             "transcript": context.get("transcript_data"),
@@ -107,6 +119,12 @@ def build_state_graph(orchestrator: Any) -> StateGraph:
             name="action_extraction",
             description="Extract action items from transcript",
             action=run_action_extraction,
+            next_state="history_tracking",
+        ),
+        StateNode(
+            name="history_tracking",
+            description="Track action items in SQLite and build a health report",
+            action=run_history_tracking,
             next_state="final_report",
         ),
         StateNode(

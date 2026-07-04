@@ -6,6 +6,7 @@ import json
 from typing import Any, Dict, Optional
 from src.agents.summary_agent import SummaryAgent
 from src.agents.action_item_agent import ActionItemAgent
+from src.agents.action_history_agent import ActionHistoryAgent
 from src.agents.transcription_agent import process_audio
 from src.state_graph import StateGraph, build_state_graph
 
@@ -42,6 +43,30 @@ class MultiAgentOrchestrator:
             transcript_text=transcript_data.get("transcript"),
             segments=transcript_data.get("segments"),
         )
+
+    def run_history_tracking(
+        self,
+        action_items,
+        meeting_source: Optional[str] = None,
+        meeting_date: Optional[str] = None,
+        history_db_path: str = "action_history.db",
+        reference_date: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Store action items in SQLite and generate a health report."""
+        agent = ActionHistoryAgent(db_path=history_db_path)
+        agent.save_action_items(
+            action_items,
+            meeting_source=meeting_source,
+            meeting_date=meeting_date,
+        )
+        report = agent.build_health_report(
+            action_items,
+            reference_date=reference_date,
+            meeting_source=meeting_source,
+        )
+        report["meeting_source"] = meeting_source
+        report["meeting_date"] = meeting_date
+        return report
 
     def run_transcription_and_summary(
         self,
@@ -80,6 +105,9 @@ class MultiAgentOrchestrator:
         transcript_output: Optional[str] = None,
         summary_output: Optional[str] = None,
         action_items_output: Optional[str] = None,
+        history_db_path: str = "action_history.db",
+        history_report_output: Optional[str] = None,
+        reference_date: Optional[str] = None,
     ) -> Dict:
         """Run complete pipeline: transcription, summary, and action item extraction.
         
@@ -107,6 +135,9 @@ class MultiAgentOrchestrator:
                 "transcript_output": transcript_output,
                 "summary_output": summary_output,
                 "action_items_output": action_items_output,
+                "history_db_path": history_db_path,
+                "history_report_output": history_report_output,
+                "reference_date": reference_date,
             }
         )
 
@@ -118,10 +149,15 @@ class MultiAgentOrchestrator:
             with open(action_items_output, "w", encoding="utf-8") as f:
                 json.dump(context["action_items"].model_dump(), f, ensure_ascii=False, indent=2)
 
+        if history_report_output and context.get("action_history_report") is not None:
+            with open(history_report_output, "w", encoding="utf-8") as f:
+                json.dump(context["action_history_report"], f, ensure_ascii=False, indent=2)
+
         return {
             "transcript": context.get("transcript_data"),
             "summary": context.get("summary"),
             "action_items": context.get("action_items").model_dump() if context.get("action_items") is not None else None,
+            "history_report": context.get("action_history_report"),
             "final_report": context.get("final_report"),
         }
 
