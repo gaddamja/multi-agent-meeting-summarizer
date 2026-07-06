@@ -28,3 +28,10 @@ torchaudio>=2.0.0
 # Windows: choco install ffmpeg or download from https://ffmpeg.org/download.html
 
 # If you use Hugging Face datasets in the future, add it here
+chromadb>=0.4.0
+sentence-transformers>=2.2.0
+gradio>=3.50
+networkx>=3.0
+matplotlib>=3.7
+reportlab>=4.0
+Pillow>=9.0

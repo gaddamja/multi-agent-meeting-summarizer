@@ -3,6 +3,7 @@
 Produces timestamped, speaker-labelled transcripts as JSON.
 """
 from typing import List, Dict, Optional
+from pathlib import Path
 import json
 import os
 import shutil
@@ -17,14 +18,42 @@ except Exception:
     pass
 
 # Ensure any local FFmpeg shared libraries are visible to torchcodec on macOS.
-# This helps pyannote.audio locate libavutil/libavcodec when ffmpeg is installed via Conda.
 if os.name == "posix":
     library_paths = [
         "/opt/anaconda3/lib",
         "/opt/homebrew/opt/ffmpeg/lib",
         "/usr/local/opt/ffmpeg/lib",
+        "/opt/local/lib",
+        "/usr/local/lib",
+        "/usr/lib",
     ]
-    existing_paths = [p for p in library_paths if os.path.isdir(p)]
+
+    # Attempt to discover the installed ffmpeg prefix automatically.
+    try:
+        ffmpeg_bin = shutil.which("ffmpeg")
+        if ffmpeg_bin:
+            bin_dir = Path(ffmpeg_bin).resolve().parent
+            prefix_dir = bin_dir.parent
+            library_paths.extend([
+                str(prefix_dir / "lib"),
+                str(prefix_dir / "lib64"),
+                str(prefix_dir / "opt" / "ffmpeg" / "lib"),
+            ])
+    except Exception:
+        pass
+
+    # Attempt Homebrew-specific detection if brew is available.
+    try:
+        brew_prefix = subprocess.check_output(["brew", "--prefix", "ffmpeg"], text=True).strip()
+        if brew_prefix:
+            library_paths.extend([
+                str(Path(brew_prefix) / "lib"),
+                str(Path(brew_prefix) / "lib64"),
+            ])
+    except Exception:
+        pass
+
+    existing_paths = [p for p in dict.fromkeys(library_paths) if Path(p).is_dir()]
     if existing_paths:
         path_value = ":".join(existing_paths)
         os.environ.setdefault("DYLD_LIBRARY_PATH", path_value)
@@ -34,13 +63,13 @@ if os.name == "posix":
         else:
             os.environ["LD_LIBRARY_PATH"] = path_value
 
-    # Make ffmpeg discoverable for Whisper and other subprocess-based decoders.
-    ffmpeg_dirs = ["/opt/anaconda3/bin", "/opt/homebrew/bin", "/usr/local/bin", "/usr/bin"]
-    path_dirs = os.environ.get("PATH", "").split(os.pathsep)
-    for candidate in ffmpeg_dirs:
-        if os.path.isdir(candidate) and candidate not in path_dirs:
-            path_dirs.insert(0, candidate)
-    os.environ["PATH"] = os.pathsep.join(path_dirs)
+# Make ffmpeg discoverable for Whisper and other subprocess-based decoders.
+ffmpeg_dirs = ["/opt/anaconda3/bin", "/opt/homebrew/bin", "/usr/local/bin", "/usr/bin"]
+path_dirs = os.environ.get("PATH", "").split(os.pathsep)
+for candidate in ffmpeg_dirs:
+    if os.path.isdir(candidate) and candidate not in path_dirs:
+        path_dirs.insert(0, candidate)
+os.environ["PATH"] = os.pathsep.join(path_dirs)
 
 try:
     import numpy as np
@@ -48,7 +77,7 @@ try:
     import torch
     import whisper
     from pyannote.audio import Pipeline
-except Exception as e:
+except Exception:
     whisper = None
     np = None
     sf = None

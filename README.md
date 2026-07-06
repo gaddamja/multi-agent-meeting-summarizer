@@ -171,9 +171,29 @@ This runs all three agents in a single StateGraph execution and produces:
 - `transcript.json`
 - `summary.json`
 - `action_items.json`
- - `history_report.json` (if requested)
+- `history_report.json` (if requested)
 
 > Runs transcription, summarization, and action item extraction in sequence using the new StateGraph pipeline.
+
+### 7) Launch the Gradio dashboard
+
+```bash
+.venv/bin/python3 scripts/gradio_app.py
+```
+
+or from the repository root with Make:
+
+```bash
+make run-gradio
+```
+
+The dashboard supports:
+- audio upload or transcript paste
+- speaker-attributed transcript viewer with timestamps
+- structured summary panel
+- action item Kanban dashboard with status updates
+- topic continuity graph
+- downloadable Markdown/PDF meeting report
 
 **Options:**
 - `--model` — Whisper model size: `tiny`, `base`, `small`, `medium`, `large` (default: `small`)

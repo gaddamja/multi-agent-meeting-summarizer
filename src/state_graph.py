@@ -93,6 +93,47 @@ def build_state_graph(orchestrator: Any) -> StateGraph:
         context["action_history_report"] = history_report
         return context
 
+    def run_topic_continuity(context: Dict[str, Any]) -> Dict[str, Any]:
+        # Use summary, action_items and transcript to build topic continuity
+        meeting_id = context.get("audio_path") or str(context.get("transcript_output")) or f"meeting-{id(context)}"
+        summary = context.get("summary") or {}
+        # summary could be a dict from SummaryAgent; flatten to text if needed
+        summary_text = summary
+        if isinstance(summary, dict):
+            summary_text = summary.get("executive_summary") or json.dumps(summary)
+
+        action_items = []
+        ai_obj = context.get("action_items")
+        if ai_obj is not None:
+            # ActionItemList or dict-like
+            try:
+                action_items = ai_obj.action_items
+            except Exception:
+                action_items = ai_obj.get("action_items", []) if isinstance(ai_obj, dict) else []
+
+        topics = []
+        # simplistic topic extraction: use summary keys or empty
+        if isinstance(summary, dict):
+            topics = [t.get("topic") for t in summary.get("discussion_topics", []) if isinstance(t, dict) and t.get("topic")]
+
+        topic_context = orchestrator.run_topic_continuity(
+            meeting_id=meeting_id,
+            meeting_source=context.get("audio_path"),
+            summary=summary_text,
+            action_items=[ {"action_item": ai.action_item, "assignee": ai.assignee} for ai in (action_items or []) ],
+            topics=topics,
+            chroma_dir=context.get("history_chroma_dir", "./.chromadb"),
+        )
+        context["topic_continuity"] = topic_context
+        return context
+
+    def run_escalation_check(context: Dict[str, Any]) -> Dict[str, Any]:
+        topic_context = context.get("topic_continuity") or {}
+        history_report = context.get("action_history_report") or {}
+        escalations = orchestrator.run_highlight_and_escalate(topic_context, history_report)
+        context["escalations"] = escalations
+        return context
+
     def run_final_report(context: Dict[str, Any]) -> Dict[str, Any]:
         report = {
             "transcript": context.get("transcript_data"),
@@ -125,6 +166,18 @@ def build_state_graph(orchestrator: Any) -> StateGraph:
             name="history_tracking",
             description="Track action items in SQLite and build a health report",
             action=run_history_tracking,
+            next_state="topic_continuity",
+        ),
+        StateNode(
+            name="topic_continuity",
+            description="Index meeting into ChromaDB and retrieve related historical topics",
+            action=run_topic_continuity,
+            next_state="escalation_check",
+        ),
+        StateNode(
+            name="escalation_check",
+            description="Highlight and escalate recurring/overdue items",
+            action=run_escalation_check,
             next_state="final_report",
         ),
         StateNode(

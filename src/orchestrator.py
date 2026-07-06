@@ -3,12 +3,21 @@
 This is a minimal orchestrator demonstrating how agents can be composed.
 """
 import json
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 from src.agents.summary_agent import SummaryAgent
 from src.agents.action_item_agent import ActionItemAgent
 from src.agents.action_history_agent import ActionHistoryAgent
-from src.agents.transcription_agent import process_audio
 from src.state_graph import StateGraph, build_state_graph
+
+
+def _import_transcription_processor():
+    from src.agents.transcription_agent import process_audio
+    return process_audio
+
+
+def _import_topic_continuity_agent():
+    from src.agents.topic_continuity_agent import TopicContinuityAgent
+    return TopicContinuityAgent
 
 
 class MultiAgentOrchestrator:
@@ -19,6 +28,7 @@ class MultiAgentOrchestrator:
         self.agents[name] = agent
 
     def run_transcription(self, audio_path: str, **kwargs) -> Dict:
+        process_audio = _import_transcription_processor()
         return process_audio(audio_path, **kwargs)
 
     def run_summary(self, transcript_data: Dict, **kwargs) -> Dict:
@@ -67,6 +77,40 @@ class MultiAgentOrchestrator:
         report["meeting_source"] = meeting_source
         report["meeting_date"] = meeting_date
         return report
+
+    def run_topic_continuity(
+        self,
+        meeting_id: str,
+        meeting_source: str,
+        summary: str,
+        action_items: List[Dict[str, Any]],
+        topics: List[str],
+        chroma_dir: str = "./.chromadb",
+    ) -> Dict[str, Any]:
+        TopicContinuityAgent = _import_topic_continuity_agent()
+        agent = TopicContinuityAgent(persist_directory=chroma_dir)
+        ids = agent.index_meeting(meeting_id, meeting_source, summary, action_items, topics)
+        # Query related topics for the summary and return recurring topics
+        related = agent.query_related(summary, k=10)
+        recurring = agent.find_recurring_topics(threshold=3)
+        return {"indexed_ids": ids, "related": related, "recurring_topics": recurring}
+
+    def run_highlight_and_escalate(self, topic_context: Dict[str, Any], history_report: Dict[str, Any]) -> Dict[str, Any]:
+        escalations = []
+        # If recurring topics present or overdue items appear repeatedly, escalate
+        for t in (topic_context.get("recurring_topics") or []):
+            if t.get("count", 0) >= 3:
+                escalations.append({"topic": t.get("topic"), "reason": "recurring"})
+
+        overdue = history_report.get("overdue_items", []) if history_report else []
+        for item in overdue:
+            # simple rule: if item appears in >=3 past meetings, escalate
+            # history_report may not contain counts; rely on topic_context search
+            matches = [r for r in (topic_context.get("related") or []) if item.get("action_item","") in (r.get("document") or "")]
+            if len(matches) >= 3:
+                escalations.append({"action_item": item, "reason": "overdue_3plus"})
+
+        return {"escalations": escalations}
 
     def run_transcription_and_summary(
         self,

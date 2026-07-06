@@ -19,6 +19,10 @@ docker-build:
 	@echo "Build Docker image (installs CPU PyTorch)."
 	docker build -t meeting-transcriber .
 
+run-gradio:
+	@echo "Launch the Gradio meeting summarizer dashboard."
+	. $(VENV)/bin/activate && python scripts/gradio_app.py
+
 clean:
 	@echo "Cleaning virtualenv and artifacts"
 	rm -rf $(VENV) sample_audio_out.json out.json
