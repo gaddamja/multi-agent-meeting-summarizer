@@ -10,7 +10,7 @@ project_root = Path(__file__).parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-from src.orchestrator import build_default_orchestrator
+from src.agents.action_item_agent import ActionItemAgent
 
 
 def main():
@@ -57,12 +57,10 @@ def main():
         print(f"Loading transcript from: {transcript_path}")
         transcript_data = json.loads(transcript_path.read_text(encoding="utf-8"))
 
-        orch = build_default_orchestrator()
         print(f"Extracting action items with model: {args.model}")
-        action_items = orch.run_action_items(
-            transcript_data,
-            model_name=args.model,
-            hf_token=args.hf_token,
+        action_items = ActionItemAgent(model_name=args.model, hf_token=args.hf_token).extract(
+            transcript_text=transcript_data.get("transcript"),
+            segments=transcript_data.get("segments"),
         )
 
         output_path = Path(args.output)

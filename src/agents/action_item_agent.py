@@ -1,4 +1,4 @@
-"""Action Item Extraction Agent: identifies tasks, assignees, deadlines using Mistral-7B.
+"""Action Item Extraction Agent: identifies tasks, assignees, and deadlines using Qwen2.5-7B-Instruct.
 
 This agent produces structured action items with:
 - action_item (task description)
@@ -31,7 +31,7 @@ except Exception:
         HF_INFERENCE_TYPE = None
 
 
-DEFAULT_MISTRAL_MODEL = "Qwen/Qwen2.5-7B-Instruct"
+DEFAULT_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 
 
 class ActionItem(BaseModel):
@@ -316,7 +316,7 @@ def _normalize_action_items(raw: Dict[str, Any]) -> ActionItemList:
 def extract_action_items(
     transcript_text: Optional[str] = None,
     segments: Optional[List[Dict[str, Any]]] = None,
-    model_name: str = DEFAULT_MISTRAL_MODEL,
+    model_name: str = DEFAULT_MODEL,
     hf_token: Optional[str] = None,
 ) -> ActionItemList:
     """Extract action items from meeting transcript.
@@ -361,7 +361,7 @@ def extract_action_items(
 
 def extract_action_items_from_transcript_file(
     transcript_json_path: str,
-    model_name: str = DEFAULT_MISTRAL_MODEL,
+    model_name: str = DEFAULT_MODEL,
     hf_token: Optional[str] = None,
     output_json: Optional[str] = None,
 ) -> ActionItemList:
@@ -401,7 +401,7 @@ class ActionItemAgent:
     
     def __init__(
         self,
-        model_name: str = DEFAULT_MISTRAL_MODEL,
+        model_name: str = DEFAULT_MODEL,
         hf_token: Optional[str] = None,
     ):
         """Initialize the action item extraction agent.

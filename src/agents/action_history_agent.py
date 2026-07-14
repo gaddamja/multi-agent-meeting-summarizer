@@ -7,8 +7,10 @@ status transitions for open/in-progress/completed work.
 from __future__ import annotations
 
 import datetime
+import json
 import re
 import sqlite3
+import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -18,8 +20,23 @@ DEFAULT_HISTORY_DB = "action_history.db"
 VALID_STATUSES = {"open", "in-progress", "completed"}
 
 CREATE_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS meetings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    meeting_id TEXT NOT NULL UNIQUE,
+    meeting_source TEXT,
+    meeting_date TEXT,
+    title TEXT,
+    transcript_text TEXT,
+    summary_json TEXT,
+    executive_summary TEXT,
+    participants_json TEXT,
+    topics_json TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS action_items (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    meeting_id TEXT,
     meeting_source TEXT,
     meeting_date TEXT,
     action_item TEXT NOT NULL,
@@ -32,6 +49,9 @@ CREATE TABLE IF NOT EXISTS action_items (
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
+CREATE INDEX IF NOT EXISTS idx_meetings_meeting_id ON meetings(meeting_id);
+CREATE INDEX IF NOT EXISTS idx_meetings_created_at ON meetings(created_at);
+CREATE INDEX IF NOT EXISTS idx_action_items_meeting_id ON action_items(meeting_id);
 CREATE INDEX IF NOT EXISTS idx_action_items_assignee ON action_items(assignee);
 CREATE INDEX IF NOT EXISTS idx_action_items_status ON action_items(status);
 CREATE INDEX IF NOT EXISTS idx_action_items_deadline_parsed ON action_items(deadline_parsed);
@@ -51,6 +71,14 @@ class ActionHistoryAgent:
         Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
         with self._connect() as conn:
             conn.executescript(CREATE_TABLE_SQL)
+            columns = {
+                row[1] for row in conn.execute("PRAGMA table_info(action_items)").fetchall()
+            }
+            if "meeting_id" not in columns:
+                conn.execute("ALTER TABLE action_items ADD COLUMN meeting_id TEXT")
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_action_items_meeting_id ON action_items(meeting_id)"
+            )
             conn.commit()
 
     @staticmethod
@@ -102,9 +130,88 @@ class ActionHistoryAgent:
 
         return None
 
+    @staticmethod
+    def _json_dumps(value: Any) -> str:
+        return json.dumps(value if value is not None else [], ensure_ascii=False)
+
+    @staticmethod
+    def _extract_topics(summary: Optional[Dict[str, Any]]) -> List[str]:
+        topics = []
+        if not isinstance(summary, dict):
+            return topics
+        for item in summary.get("discussion_topics") or []:
+            if isinstance(item, dict) and item.get("topic"):
+                topics.append(str(item["topic"]))
+            elif isinstance(item, str):
+                topics.append(item)
+        return topics
+
+    def save_meeting(
+        self,
+        summary: Optional[Dict[str, Any]] = None,
+        meeting_id: Optional[str] = None,
+        meeting_source: Optional[str] = None,
+        meeting_date: Optional[str] = None,
+        title: Optional[str] = None,
+        transcript_text: Optional[str] = None,
+        participants: Optional[List[str]] = None,
+    ) -> str:
+        now = datetime.datetime.utcnow().isoformat()
+        stable_meeting_id = meeting_id or str(uuid.uuid4())
+        summary_data = summary or {}
+        executive_summary = (
+            summary_data.get("executive_summary") if isinstance(summary_data, dict) else None
+        )
+        topics = self._extract_topics(summary_data)
+
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO meetings (
+                    meeting_id,
+                    meeting_source,
+                    meeting_date,
+                    title,
+                    transcript_text,
+                    summary_json,
+                    executive_summary,
+                    participants_json,
+                    topics_json,
+                    created_at,
+                    updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(meeting_id) DO UPDATE SET
+                    meeting_source = excluded.meeting_source,
+                    meeting_date = excluded.meeting_date,
+                    title = excluded.title,
+                    transcript_text = excluded.transcript_text,
+                    summary_json = excluded.summary_json,
+                    executive_summary = excluded.executive_summary,
+                    participants_json = excluded.participants_json,
+                    topics_json = excluded.topics_json,
+                    updated_at = excluded.updated_at
+                """,
+                (
+                    stable_meeting_id,
+                    meeting_source,
+                    meeting_date,
+                    title,
+                    transcript_text,
+                    self._json_dumps(summary_data),
+                    executive_summary,
+                    self._json_dumps(participants or []),
+                    self._json_dumps(topics),
+                    now,
+                    now,
+                ),
+            )
+            conn.commit()
+        return stable_meeting_id
+
     def save_action_items(
         self,
         action_items: ActionItemList,
+        meeting_id: Optional[str] = None,
         meeting_source: Optional[str] = None,
         meeting_date: Optional[str] = None,
         status: str = "open",
@@ -120,6 +227,7 @@ class ActionHistoryAgent:
                 cursor.execute(
                     """
                     INSERT INTO action_items (
+                        meeting_id,
                         meeting_source,
                         meeting_date,
                         action_item,
@@ -131,9 +239,10 @@ class ActionHistoryAgent:
                         status,
                         created_at,
                         updated_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
+                        meeting_id,
                         meeting_source,
                         meeting_date,
                         item.action_item,
@@ -191,6 +300,45 @@ class ActionHistoryAgent:
         return self._query_items(
             "SELECT * FROM action_items WHERE status IN ('open', 'in-progress') AND deadline_parsed IS NOT NULL AND deadline_parsed <= ? ORDER BY deadline_parsed ASC",
             (reference.isoformat(),),
+        )
+
+    def query_action_items(
+        self,
+        assignee: Optional[str] = None,
+        status: Optional[str] = None,
+        overdue: bool = False,
+        reference_date: Optional[str] = None,
+        limit: int = 50,
+    ) -> List[Dict[str, Any]]:
+        """Query action history with a fixed set of safe, composable filters."""
+        clauses: List[str] = []
+        params: List[Any] = []
+
+        if assignee:
+            clauses.append("LOWER(assignee) = LOWER(?)")
+            params.append(assignee.strip())
+        if status:
+            normalized_status = self._normalize_status(status)
+            clauses.append("status = ?")
+            params.append(normalized_status)
+        if overdue:
+            try:
+                reference = datetime.date.fromisoformat(reference_date) if reference_date else datetime.date.today()
+            except ValueError:
+                reference = datetime.date.today()
+            clauses.extend([
+                "status IN ('open', 'in-progress')",
+                "deadline_parsed IS NOT NULL",
+                "deadline_parsed <= ?",
+            ])
+            params.append(reference.isoformat())
+
+        where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+        safe_limit = max(1, min(int(limit), 200))
+        params.append(safe_limit)
+        return self._query_items(
+            f"SELECT * FROM action_items{where} ORDER BY COALESCE(deadline_parsed, '9999-12-31'), created_at DESC LIMIT ?",
+            tuple(params),
         )
 
     def find_recurring_items(

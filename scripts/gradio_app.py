@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+import sqlite3
 import sys
 import tempfile
 from pathlib import Path
@@ -8,6 +9,10 @@ from typing import Any, Dict, List, Optional, Tuple
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT_DIR))
+
+MATPLOTLIB_CACHE_DIR = Path(tempfile.gettempdir()) / "meeting_summarizer_matplotlib"
+MATPLOTLIB_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+os.environ.setdefault("MPLCONFIGDIR", str(MATPLOTLIB_CACHE_DIR))
 
 import gradio as gr
 import matplotlib.pyplot as plt
@@ -19,7 +24,8 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 
 from src.agents.action_history_agent import ActionHistoryAgent, VALID_STATUSES
 from src.agents.action_item_agent import ActionItemList
-from src.orchestrator import MultiAgentOrchestrator
+from src.agents.nlp_query_agent import NLPQueryAgent, TARGETS
+from src.state_graph import run_meeting_workflow
 
 DEFAULT_HISTORY_DB = "action_history.db"
 DEFAULT_WHISPER_MODEL = "small"
@@ -275,6 +281,210 @@ def _build_pdf_report(markdown_text: str, output_path: str) -> str:
     return output_path
 
 
+def _file_output_value(path: Any) -> Optional[str]:
+    if not path:
+        return None
+    file_path = Path(str(path)).expanduser()
+    if not file_path.is_file():
+        return None
+    return str(file_path)
+
+
+def _default_ui_state() -> Dict[str, Any]:
+    return {
+        "transcript_html": "",
+        "transcript_text": "",
+        "summary_html": "",
+        "summary": {},
+        "action_rows": [],
+        "action_items": [],
+        "kanban_html": "",
+        "graph_path": None,
+        "report_md": None,
+        "report_pdf": None,
+    }
+
+
+def _normalize_action_rows(rows: Any) -> List[List[Any]]:
+    """Convert Gradio Dataframe values (pandas or list) into serializable rows."""
+    if rows is None:
+        return []
+    if isinstance(rows, list):
+        return [list(row) if isinstance(row, (list, tuple)) else [row] for row in rows]
+    if isinstance(rows, dict):
+        data = rows.get("data", [])
+        return _normalize_action_rows(data)
+    if hasattr(rows, "values") and hasattr(rows.values, "tolist"):
+        return rows.values.tolist()
+    if hasattr(rows, "to_numpy"):
+        return rows.to_numpy().tolist()
+    return []
+
+
+def _normalize_ui_state(state: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    base = _default_ui_state()
+    if not isinstance(state, dict):
+        return base
+    normalized = dict(base)
+    normalized.update({k: state.get(k) for k in base.keys() if k in state})
+    normalized["action_rows"] = _normalize_action_rows(normalized.get("action_rows"))
+    normalized["graph_path"] = _file_output_value(normalized.get("graph_path"))
+    normalized["report_md"] = _file_output_value(normalized.get("report_md"))
+    normalized["report_pdf"] = _file_output_value(normalized.get("report_pdf"))
+    return normalized
+
+
+def _rows_to_action_objects(rows: Any) -> List[Dict[str, Any]]:
+    objects = []
+    for row in _normalize_action_rows(rows):
+        padded = list(row) + [""] * max(0, 6 - len(row))
+        objects.append({
+            "id": padded[0],
+            "action_item": padded[1],
+            "assignee": padded[2],
+            "deadline": padded[3],
+            "priority": padded[4],
+            "status": padded[5],
+            "context_quote": "",
+        })
+    return objects
+
+
+def _load_latest_action_history_state(db_path: str = DEFAULT_HISTORY_DB) -> Dict[str, Any]:
+    state = _default_ui_state()
+    if not Path(db_path).exists():
+        return state
+
+    with sqlite3.connect(db_path) as conn:
+        conn.row_factory = sqlite3.Row
+        has_meetings_table = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'meetings'"
+        ).fetchone()
+        if has_meetings_table:
+            latest_meeting = conn.execute(
+                """
+                SELECT meeting_id, meeting_source, meeting_date, title, summary_json
+                FROM meetings
+                ORDER BY updated_at DESC, id DESC
+                LIMIT 1
+                """
+            ).fetchone()
+            if latest_meeting is not None:
+                rows = conn.execute(
+                    """
+                    SELECT id, action_item, assignee, deadline, priority, status
+                    FROM action_items
+                    WHERE meeting_id = ?
+                    ORDER BY id ASC
+                    """,
+                    (latest_meeting["meeting_id"],),
+                ).fetchall()
+                summary = {}
+                if latest_meeting["summary_json"]:
+                    try:
+                        summary = json.loads(latest_meeting["summary_json"])
+                    except json.JSONDecodeError:
+                        summary = {}
+
+                action_rows = [
+                    [
+                        row["id"],
+                        row["action_item"],
+                        row["assignee"],
+                        row["deadline"] or "",
+                        row["priority"] or "",
+                        row["status"] or "open",
+                    ]
+                    for row in rows
+                ]
+                meeting_label = (
+                    latest_meeting["title"]
+                    or latest_meeting["meeting_source"]
+                    or "last saved meeting"
+                )
+                meeting_date = latest_meeting["meeting_date"] or "unknown date"
+                state["summary"] = summary
+                state["summary_html"] = _build_summary_html(summary)
+                state["action_rows"] = action_rows
+                state["action_items"] = _rows_to_action_objects(action_rows)
+                state["kanban_html"] = _build_kanban_html(state["action_items"])
+                if not state["summary_html"] or state["summary_html"] == "<p>No summary is available.</p>":
+                    state["summary_html"] = (
+                        "<p><strong>Restored from SQLite meeting history.</strong></p>"
+                        f"<p>Showing saved action items for <em>{meeting_label}</em> ({meeting_date}). "
+                        "No summary was stored for this meeting.</p>"
+                    )
+                return state
+
+        latest = conn.execute(
+            """
+            SELECT meeting_source, meeting_date
+            FROM action_items
+            ORDER BY created_at DESC, id DESC
+            LIMIT 1
+            """
+        ).fetchone()
+        if latest is None:
+            return state
+
+        rows = conn.execute(
+            """
+            SELECT id, action_item, assignee, deadline, priority, status
+            FROM action_items
+            WHERE COALESCE(meeting_source, '') = COALESCE(?, '')
+              AND COALESCE(meeting_date, '') = COALESCE(?, '')
+            ORDER BY id ASC
+            """,
+            (latest["meeting_source"], latest["meeting_date"]),
+        ).fetchall()
+
+    action_rows = [
+        [
+            row["id"],
+            row["action_item"],
+            row["assignee"],
+            row["deadline"] or "",
+            row["priority"] or "",
+            row["status"] or "open",
+        ]
+        for row in rows
+    ]
+    meeting_label = latest["meeting_source"] or "last saved meeting"
+    meeting_date = latest["meeting_date"] or "unknown date"
+    state["action_rows"] = action_rows
+    state["kanban_html"] = _build_kanban_html(_rows_to_action_objects(action_rows))
+    state["summary_html"] = (
+        "<p><strong>Restored from SQLite action history.</strong></p>"
+        f"<p>Showing saved action items for <em>{meeting_label}</em> ({meeting_date}). "
+        "Transcript and summary text are not stored in the current SQLite schema.</p>"
+    )
+    return state
+
+
+def _restore_ui_from_state(state: Optional[Dict[str, Any]]) -> Tuple[str, str, str, List[List[Any]], str, Optional[str], Optional[str], Optional[str], Dict[str, Any]]:
+    restored = _normalize_ui_state(state)
+    if not restored["action_rows"]:
+        restored = _normalize_ui_state(_load_latest_action_history_state())
+    return (
+        restored["transcript_html"],
+        restored["transcript_text"],
+        restored["summary_html"],
+        restored["action_rows"],
+        restored["kanban_html"],
+        restored["graph_path"],
+        restored["report_md"],
+        restored["report_pdf"],
+        restored,
+    )
+
+
+def _create_persisted_ui_state() -> Any:
+    default_state = _default_ui_state()
+    if hasattr(gr, "BrowserState"):
+        return gr.BrowserState(default_value=default_state, storage_key="meeting_summarizer_ui_state")
+    return gr.State(value=default_state)
+
+
 def _make_action_items_rows(action_items: ActionItemList, saved_ids: List[int]) -> Tuple[List[List[Any]], List[str], List[Dict[str, Any]]]:
     rows: List[List[Any]] = []
     objects: List[Dict[str, Any]] = []
@@ -294,17 +504,10 @@ def _make_action_items_rows(action_items: ActionItemList, saved_ids: List[int]) 
     return rows, ["id", "action_item", "assignee", "deadline", "priority", "status"], objects
 
 
-def _persist_action_items(action_items: ActionItemList, meeting_source: str, meeting_date: str) -> Tuple[List[int], Dict[str, Any]]:
-    history_agent = ActionHistoryAgent(db_path=DEFAULT_HISTORY_DB)
-    ids = history_agent.save_action_items(action_items, meeting_source=meeting_source, meeting_date=meeting_date)
-    report = history_agent.build_health_report(action_items, meeting_source=meeting_source)
-    return ids, report
-
-
-def _update_statuses(rows: List[List[Any]]) -> Tuple[str, Dict[str, Any]]:
+def _update_statuses(rows: Any) -> Tuple[str, Dict[str, Any]]:
     history_agent = ActionHistoryAgent(db_path=DEFAULT_HISTORY_DB)
     items = []
-    for row in rows:
+    for row in _normalize_action_rows(rows):
         try:
             item_id = int(row[0])
         except Exception:
@@ -326,6 +529,21 @@ def _update_statuses(rows: List[List[Any]]) -> Tuple[str, Dict[str, Any]]:
     return kanban_html, {"updated_items": len(items)}
 
 
+def _update_statuses_and_persist(rows: Any, state: Optional[Dict[str, Any]]) -> Tuple[str, str, Dict[str, Any]]:
+    normalized_rows = _normalize_action_rows(rows)
+    kanban_html, update_info = _update_statuses(normalized_rows)
+    persisted = _normalize_ui_state(state)
+    persisted["action_rows"] = normalized_rows
+    persisted["kanban_html"] = kanban_html
+    return kanban_html, json.dumps(update_info), persisted
+
+
+def _persist_table_edits(rows: Any, state: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    persisted = _normalize_ui_state(state)
+    persisted["action_rows"] = _normalize_action_rows(rows)
+    return persisted
+
+
 def process_meeting_with_error_handling(
     audio_file: Optional[Any],
     transcript_text: str,
@@ -334,16 +552,13 @@ def process_meeting_with_error_handling(
     summary_model: str,
     action_model: str,
     meeting_name: str,
-) -> Tuple[str, str, str, List[List[Any]], str, str, str, str]:
+) -> Tuple[Any, ...]:
     try:
         audio_path = _safe_path(audio_file)
         meeting_source = meeting_name or (Path(audio_path).name if audio_path else "manual_transcript")
         meeting_date = datetime.date.today().isoformat()
-        orch = MultiAgentOrchestrator()
-        transcript_data: Dict[str, Any]
-        if audio_path:
-            transcript_data = orch.run_transcription(audio_path, model_name=whisper_model, hf_token=hf_token)
-        elif transcript_text and transcript_text.strip():
+        transcript_data: Optional[Dict[str, Any]] = None
+        if not audio_path and transcript_text and transcript_text.strip():
             transcript_data = {
                 "file": meeting_source,
                 "model": None,
@@ -358,18 +573,28 @@ def process_meeting_with_error_handling(
                 ],
             }
         else:
-            raise ValueError("Please upload audio or paste transcript text.")
-        summary = orch.run_summary(
-            transcript_data,
-            model_name=summary_model,
-            hf_token=hf_token,
+            if not audio_path:
+                raise ValueError("Please upload audio or paste transcript text.")
+
+        workflow_state = run_meeting_workflow(
+            {
+                "audio_path": audio_path,
+                "transcript_data": transcript_data,
+                "meeting_source": meeting_source,
+                "meeting_date": meeting_date,
+                "transcript_model_name": whisper_model,
+                "summary_model_name": summary_model,
+                "action_item_model_name": action_model,
+                "hf_token": hf_token or None,
+                "history_db_path": DEFAULT_HISTORY_DB,
+                "history_chroma_dir": "./.chromadb",
+            }
         )
-        action_items = orch.run_action_items(
-            transcript_data,
-            model_name=action_model,
-            hf_token=hf_token,
-        )
-        saved_ids, health_report = _persist_action_items(action_items, meeting_source, meeting_date)
+        transcript_data = workflow_state["transcript_data"]
+        summary = workflow_state["summary"]
+        action_items = workflow_state["action_items"]
+        saved_ids = workflow_state.get("saved_action_item_ids", [])
+        health_report = workflow_state.get("action_history_report", {})
         rows, headers, action_objects = _make_action_items_rows(action_items, saved_ids)
         transcript_html = _build_transcript_html(transcript_data.get("segments", []))
         summary_html = _build_summary_html(summary)
@@ -394,26 +619,57 @@ def process_meeting_with_error_handling(
             summary_html,
             rows,
             kanban_html,
-            graph_path or "",
-            str(report_md_path),
-            str(report_pdf_path) if report_pdf_path.exists() else "",
+            _file_output_value(graph_path),
+            _file_output_value(report_md_path),
+            _file_output_value(report_pdf_path),
+            summary,
+            action_objects,
         )
     except Exception as e:
         error_msg = f"<p style='color:red;'><strong>Error:</strong> {str(e)}</p>"
-        return (error_msg, str(e), error_msg, [], "", "", "", "")
+        return (error_msg, str(e), error_msg, [], "", None, None, None, {}, [])
+
+
+def _chat_with_agents(
+    message: str,
+    history: Optional[List[Dict[str, Any]]],
+    target: str,
+    state: Optional[Dict[str, Any]],
+    model_name: str,
+    hf_token: str,
+) -> Tuple[str, List[Dict[str, Any]]]:
+    """Answer one conversational query and append it to Gradio chat history."""
+    chat_history: List[Dict[str, Any]] = []
+    for entry in history or []:
+        if isinstance(entry, dict) and "role" in entry and "content" in entry:
+            chat_history.append(entry)
+        elif isinstance(entry, (list, tuple)) and len(entry) == 2:
+            chat_history.extend([
+                {"role": "user", "content": str(entry[0])},
+                {"role": "assistant", "content": str(entry[1])},
+            ])
+    target_key = next((key for key, label in TARGETS.items() if label == target), target or "auto")
+    result = NLPQueryAgent(
+        history_db_path=DEFAULT_HISTORY_DB,
+        chroma_dir="./.chromadb",
+    ).ask(
+        question=message,
+        target=target_key,
+        state=_normalize_ui_state(state),
+        model_name=model_name or DEFAULT_SUMMARY_MODEL,
+        hf_token=hf_token or None,
+    )
+    answer = f"**{TARGETS.get(result['agent'], result['agent'])} agent**\n\n{result['answer']}"
+    chat_history.extend([
+        {"role": "user", "content": message},
+        {"role": "assistant", "content": answer},
+    ])
+    return "", chat_history
 
 
 def launch_ui() -> None:
     with gr.Blocks(title="Meeting Summarizer Dashboard") as demo:
-        # Hidden State components to persist data across page refreshes
-        persisted_transcript_html = gr.State(value="")
-        persisted_transcript_text = gr.State(value="")
-        persisted_summary_html = gr.State(value="")
-        persisted_action_rows = gr.State(value=[])
-        persisted_kanban_html = gr.State(value="")
-        persisted_graph_path = gr.State(value="")
-        persisted_report_md = gr.State(value="")
-        persisted_report_pdf = gr.State(value="")
+        persisted_ui_state = _create_persisted_ui_state()
         
         gr.Markdown("# Meeting Summarizer Dashboard")
         with gr.Row():
@@ -443,32 +699,83 @@ def launch_ui() -> None:
                     with gr.TabItem("Report"):
                         report_md_file = gr.File(label="Download meeting report (Markdown)")
                         report_pdf_file = gr.File(label="Download meeting report (PDF)")
+                    with gr.TabItem("Ask Agents"):
+                        gr.Markdown("Ask about the current meeting, historical action items, or related topics.")
+                        agent_target = gr.Dropdown(
+                            label="Agent",
+                            choices=list(TARGETS.values()),
+                            value=TARGETS["auto"],
+                        )
+                        agent_chat = gr.Chatbot(label="Agent conversation")
+                        agent_question = gr.Textbox(
+                            label="Question",
+                            placeholder="Which action items assigned to Mike are overdue?",
+                        )
+                        ask_button = gr.Button("Ask")
         
         # Store results and update UI display
         def process_and_persist(*args):
-            result = process_meeting(*args)
-            return result + result  # Return both for display and for persistence
+            result = process_meeting_with_error_handling(*args)
+            state_payload = {
+                "transcript_html": result[0],
+                "transcript_text": result[1],
+                "summary_html": result[2],
+                "action_rows": result[3],
+                "kanban_html": result[4],
+                "graph_path": result[5],
+                "report_md": result[6],
+                "report_pdf": result[7],
+                "summary": result[8],
+                "action_items": result[9],
+            }
+            return result[:8] + (state_payload,)
         
         process_button.click(
             fn=process_and_persist,
             inputs=[audio_input, transcript_input, hf_token, whisper_model, summary_model, action_model, meeting_name],
             outputs=[
-                transcript_view, transcript_text_output, summary_output, action_table, kanban_output, topic_graph, report_md_file, report_pdf_file,
-                persisted_transcript_html, persisted_transcript_text, persisted_summary_html, persisted_action_rows, persisted_kanban_html, persisted_graph_path, persisted_report_md, persisted_report_pdf,
+                transcript_view, transcript_text_output, summary_output, action_table, kanban_output, topic_graph, report_md_file, report_pdf_file, persisted_ui_state
             ],
         )
-        
-        # On page load, restore persisted values
+
         demo.load(
-            fn=lambda: (
-                gr.update(value=gr.State.value if hasattr(gr, 'State') else ""),
-            ),
+            fn=_restore_ui_from_state,
+            inputs=[persisted_ui_state],
+            outputs=[
+                transcript_view,
+                transcript_text_output,
+                summary_output,
+                action_table,
+                kanban_output,
+                topic_graph,
+                report_md_file,
+                report_pdf_file,
+                persisted_ui_state,
+            ],
         )
-        
+
+        action_table.change(
+            fn=_persist_table_edits,
+            inputs=[action_table, persisted_ui_state],
+            outputs=[persisted_ui_state],
+        )
+
         save_status_button.click(
-            fn=_update_statuses,
-            inputs=[action_table],
-            outputs=[kanban_output, status_update_output],
+            fn=_update_statuses_and_persist,
+            inputs=[action_table, persisted_ui_state],
+            outputs=[kanban_output, status_update_output, persisted_ui_state],
+        )
+
+        chat_inputs = [agent_question, agent_chat, agent_target, persisted_ui_state, summary_model, hf_token]
+        ask_button.click(
+            fn=_chat_with_agents,
+            inputs=chat_inputs,
+            outputs=[agent_question, agent_chat],
+        )
+        agent_question.submit(
+            fn=_chat_with_agents,
+            inputs=chat_inputs,
+            outputs=[agent_question, agent_chat],
         )
 
     demo.launch(server_name="0.0.0.0", server_port=7860)

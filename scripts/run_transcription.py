@@ -9,7 +9,7 @@ project_root = Path(__file__).resolve().parents[1]
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-from src.orchestrator import build_default_orchestrator
+from src.agents.transcription_agent import process_audio
 
 
 def main():
@@ -18,9 +18,8 @@ def main():
     parser.add_argument("--model", default="small", help="Whisper model size (tiny, base, small, medium, large)")
     parser.add_argument("--output", default="transcript.json", help="Output JSON file")
     args = parser.parse_args()
-    orch = build_default_orchestrator()
     print("Starting transcription pipeline...")
-    orch.run_transcription(args.audio, output_json=args.output, model_name=args.model)
+    process_audio(args.audio, output_json=args.output, model_name=args.model)
     print(f"Output written to {args.output}")
 
 

@@ -1,4 +1,4 @@
-"""Summary Agent: structured meeting summarization using Mistral-7B.
+"""Summary Agent: structured meeting summarization using Qwen2.5-7B-Instruct.
 
 This agent produces:
 - executive_summary (3-5 sentences)
@@ -29,7 +29,7 @@ except Exception:
         HF_INFERENCE_TYPE = None
 
 
-DEFAULT_MISTRAL_MODEL = "Qwen/Qwen2.5-7B-Instruct"
+DEFAULT_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 CHUNK_DURATION_SECONDS = 12 * 60
 LONG_MEETING_THRESHOLD_SECONDS = 60 * 60
 
@@ -251,7 +251,7 @@ def _generate_text(prompt: str, model_name: str, hf_token: Optional[str]) -> str
 
 def summarize_chunk(
     segments: List[Dict[str, Any]],
-    model_name: str = DEFAULT_MISTRAL_MODEL,
+    model_name: str = DEFAULT_MODEL,
     hf_token: Optional[str] = None,
     chunk_index: Optional[int] = None,
     total_chunks: Optional[int] = None,
@@ -266,7 +266,7 @@ def summarize_chunk(
 def summarize_transcript(
     transcript_text: Optional[str] = None,
     segments: Optional[List[Dict[str, Any]]] = None,
-    model_name: str = DEFAULT_MISTRAL_MODEL,
+    model_name: str = DEFAULT_MODEL,
     hf_token: Optional[str] = None,
     output_json: Optional[str] = None,
 ) -> Dict[str, Any]:
@@ -319,7 +319,7 @@ def summarize_transcript(
 
 
 class SummaryAgent:
-    def __init__(self, model_name: str = DEFAULT_MISTRAL_MODEL, hf_token: Optional[str] = None):
+    def __init__(self, model_name: str = DEFAULT_MODEL, hf_token: Optional[str] = None):
         self.model_name = model_name
         self.hf_token = hf_token
 

@@ -3,7 +3,7 @@
 This project provides a prototype multi-agent system that converts meeting audio (MP3/WAV) into actionable outputs. It includes:
 
 - **Transcription Agent** — OpenAI Whisper (local) + pyannote.audio speaker diarization
-- **Summary Agent** — Meeting-wide summarization using Mistral-7B
+- **Summary Agent** — Meeting-wide summarization using Qwen2.5-7B-Instruct
 - **Action Item Agent** — Identifies tasks, assignees, and deadlines from transcripts
  - **Action History Agent** — Persists action items in SQLite, tracks status, and flags overdue/recurring items
 
@@ -24,8 +24,9 @@ The core flow is:
 4. `final_report`
    - Assembles the transcript, summary, and action items into a single final report.
 
-The state graph is built in `src/state_graph.py` and executed by the orchestrator in `src/orchestrator.py`.
-Each step is implemented as a `StateNode` with an `action` function and a `next_state` transition.
+The workflow is built and executed in `src/state_graph.py`. Each `StateNode`
+directly invokes its relevant agent or tool, returns a partial state update, and
+declares its `next_state` transition. There is no additional orchestrator layer.
 
 A simple representation of the flow:
 
@@ -148,22 +149,21 @@ python scripts/run_action_items.py out.json --output actions.txt --format table
 ```
 
 ### 6) Run complete end-to-end pipeline
-The orchestrator now uses a `StateGraph` pipeline internally:
-`Transcription -> Summary Generation -> Action Extraction -> Final Report`.
+The `StateGraph` is the workflow and orchestration entry point:
+`Transcription -> Summary Generation -> Action Extraction -> History Tracking -> Topic Continuity -> Escalation Check -> Final Report`.
 
 ```bash
 .venv/bin/python3 -c "
-from src.orchestrator import build_default_orchestrator
-orch = build_default_orchestrator()
-result = orch.run_full_pipeline(
-    audio_path='sample_audio.mp3',
-    transcript_output='transcript.json',
-    summary_output='summary.json',
-    action_items_output='action_items.json'
-  history_report_output='history_report.json'
-)
+from src.state_graph import run_meeting_workflow
+state = run_meeting_workflow({
+    'audio_path': 'sample_audio.mp3',
+    'transcript_output': 'transcript.json',
+    'summary_output': 'summary.json',
+    'action_items_output': 'action_items.json',
+    'history_report_output': 'history_report.json',
+})
 print('Pipeline complete!')
-print(result['final_report'])
+print(state['final_report'])
 "
 ```
 
@@ -173,7 +173,7 @@ This runs all three agents in a single StateGraph execution and produces:
 - `action_items.json`
 - `history_report.json` (if requested)
 
-> Runs transcription, summarization, and action item extraction in sequence using the new StateGraph pipeline.
+> Runs every processing agent and tool as a node in one StateGraph workflow.
 
 ### 7) Launch the Gradio dashboard
 
@@ -188,6 +188,9 @@ make run-gradio
 ```
 
 The dashboard supports:
+
+- Natural-language questions through the **Ask Agents** tab, with automatic or explicit routing to action history, topic continuity, summary, transcript, and current action-item data
+- Read-only filtered questions such as “Which action items assigned to Mike are overdue?”
 - audio upload or transcript paste
 - speaker-attributed transcript viewer with timestamps
 - structured summary panel
@@ -198,7 +201,7 @@ The dashboard supports:
 **Options:**
 - `--model` — Whisper model size: `tiny`, `base`, `small`, `medium`, `large` (default: `small`)
 - `--output` — Output JSON file path (default: `transcript.json`)
-- `--hf-token` — Hugging Face token for Mistral-7B inference (or use `HF_TOKEN` environment variable)
+- `--hf-token` — Hugging Face token for model inference (or use `HF_TOKEN` environment variable)
 
 **Action Items Extraction Options:**
 - `--format` — Output format: `json`, `markdown`, or `table` (default: `json`)
@@ -207,6 +210,10 @@ The dashboard supports:
  - `--history-db` — SQLite file path for action item history (default: `action_history.db`)
  - `--history-report-output` — Optional health report JSON output path
  - `--reference-date` — Optional date for overdue computation, format `YYYY-MM-DD`
+
+The history database stores meeting metadata and structured summaries in a
+`meetings` table, then links each persisted action item back to its meeting via
+`meeting_id`.
 
 ## Output Format
 
@@ -264,7 +271,7 @@ See [docs/ACTION_ITEM_AGENT.md](docs/ACTION_ITEM_AGENT.md) for detailed document
 
 ## Notes
 
-- This is a prototype; adapt `src/orchestrator.py` to integrate with LangGraph if needed
+- This is a lightweight LangGraph-style implementation and can be replaced by the LangGraph package if durable execution or distributed checkpoints are needed
 - First run of each model size will download the model (~1-3GB depending on size)
 - Speaker diarization requires a Hugging Face token and gated model access
 
@@ -294,4 +301,3 @@ docker build -t meeting-transcriber .
 # Run inside Docker (example):
 docker run --rm -v $(pwd):/data meeting-transcriber /data/sample_audio.mp3 --model tiny --output /data/out.json
 ```
-
