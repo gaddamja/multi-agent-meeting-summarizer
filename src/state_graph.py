@@ -23,6 +23,11 @@ StateUpdate = Dict[str, Any]
 StateAction = Callable[[State], StateUpdate]
 
 
+# Simple logging helper
+def _log(message: str) -> None:
+    print(f"[workflow] {message}")
+
+
 @dataclass(frozen=True)
 class StateNode:
     name: str
@@ -52,29 +57,38 @@ class StateGraph:
         state = dict(initial_state)
         current_name: Optional[str] = self.start_state
         visited = 0
+        _log(f"Starting workflow: {self.start_state} -> ... -> {self.final_state}")
         while current_name is not None:
             visited += 1
             if visited > len(self.nodes):
                 raise RuntimeError("StateGraph contains a cycle; cyclic execution is not supported")
             node = self.nodes[current_name]
+            _log(f"Running agent/node: {node.name} — {node.description}")
             updates = node.action(dict(state))
             if not isinstance(updates, dict):
                 raise TypeError(f"Node '{node.name}' must return a dictionary of state updates")
             state.update(updates)
             state["current_node"] = node.name
+            _log(f"Completed: {node.name}")
             if current_name == self.final_state:
                 break
-            current_name = node.next_state
+            next_name = node.next_state
+            _log(f"Transitioning: {node.name} -> {next_name}")
+            current_name = next_name
+        _log("Workflow completed successfully")
         return state
 
 
 def transcription_node(state: State) -> StateUpdate:
     """Use supplied transcript data or invoke the transcription tool."""
     if state.get("transcript_data"):
+        _log("transcription_node: using supplied transcript_data")
         return {"transcript_data": state["transcript_data"]}
     audio_path = state.get("audio_path")
     if not audio_path:
         raise ValueError("The workflow requires audio_path or transcript_data")
+    skip_diarization = state.get("skip_diarization", False)
+    _log(f"transcription_node: processing audio via Whisper(model={state.get('transcript_model_name', 'small')}), skip_diarization={skip_diarization}")
     from src.agents.transcription_agent import process_audio
 
     transcript = process_audio(
@@ -82,12 +96,15 @@ def transcription_node(state: State) -> StateUpdate:
         output_json=state.get("transcript_output"),
         model_name=state.get("transcript_model_name", "small"),
         hf_token=state.get("hf_token"),
+        skip_diarization=skip_diarization,
     )
+    _log(f"transcription_node: completed — {len(transcript.get('segments', []))} segments")
     return {"transcript_data": transcript}
 
 
 def summary_node(state: State) -> StateUpdate:
     transcript = state["transcript_data"]
+    _log(f"summary_node: generating summary via SummaryAgent(model={state.get('summary_model_name', DEFAULT_TEXT_MODEL)})")
     summary = SummaryAgent(
         model_name=state.get("summary_model_name", DEFAULT_TEXT_MODEL),
         hf_token=state.get("hf_token"),
@@ -95,6 +112,7 @@ def summary_node(state: State) -> StateUpdate:
         transcript_text=transcript.get("transcript"),
         segments=transcript.get("segments"),
     )
+    _log("summary_node: summary generated")
     if state.get("summary_output"):
         Path(state["summary_output"]).write_text(
             json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8"
@@ -104,6 +122,7 @@ def summary_node(state: State) -> StateUpdate:
 
 def action_extraction_node(state: State) -> StateUpdate:
     transcript = state["transcript_data"]
+    _log(f"action_extraction_node: extracting action items via ActionItemAgent(model={state.get('action_item_model_name', DEFAULT_TEXT_MODEL)})")
     action_items = ActionItemAgent(
         model_name=state.get("action_item_model_name", DEFAULT_TEXT_MODEL),
         hf_token=state.get("hf_token"),
@@ -111,6 +130,7 @@ def action_extraction_node(state: State) -> StateUpdate:
         transcript_text=transcript.get("transcript"),
         segments=transcript.get("segments"),
     )
+    _log(f"action_extraction_node: extracted {action_items.total_count} action items")
     if state.get("action_items_output"):
         Path(state["action_items_output"]).write_text(
             json.dumps(action_items.model_dump(), ensure_ascii=False, indent=2), encoding="utf-8"
@@ -119,6 +139,7 @@ def action_extraction_node(state: State) -> StateUpdate:
 
 
 def history_tracking_node(state: State) -> StateUpdate:
+    _log("history_tracking_node: saving meeting and action items to database")
     action_items = state["action_items"]
     transcript = state.get("transcript_data") or {}
     summary = state.get("summary") or {}
@@ -139,6 +160,7 @@ def history_tracking_node(state: State) -> StateUpdate:
         meeting_date=state.get("meeting_date"),
         title=state.get("meeting_title") or state.get("meeting_name"),
         transcript_text=transcript.get("transcript"),
+        transcript_segments=transcript.get("segments"),
         participants=participants,
     )
     saved_ids = agent.save_action_items(
@@ -161,6 +183,7 @@ def history_tracking_node(state: State) -> StateUpdate:
         Path(state["history_report_output"]).write_text(
             json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8"
         )
+    _log(f"history_tracking_node: saved meeting {meeting_id} with {len(saved_ids)} action items")
     return {
         "meeting_id": meeting_id,
         "saved_action_item_ids": saved_ids,
@@ -170,6 +193,7 @@ def history_tracking_node(state: State) -> StateUpdate:
 
 def topic_continuity_node(state: State) -> StateUpdate:
     """Index and retrieve topic context; degrade gracefully if the optional store fails."""
+    _log("workflow", "Indexing topics and querying related historical context")
     try:
         from src.agents.topic_continuity_agent import TopicContinuityAgent
 
@@ -191,20 +215,28 @@ def topic_continuity_node(state: State) -> StateUpdate:
         ]
         meeting_source = state.get("meeting_source") or state.get("audio_path") or "manual_transcript"
         meeting_id = state.get("meeting_id") or meeting_source
+        _log("workflow", f"Creating TopicContinuityAgent for meeting: {meeting_id}")
         agent = TopicContinuityAgent(
             persist_directory=state.get("history_chroma_dir", "./.chromadb")
         )
+        _log("workflow", "TopicContinuityAgent created successfully")
         indexed_ids = agent.index_meeting(
             meeting_id, meeting_source, summary_text, action_items, topics
         )
-        return {
+        _log("workflow", f"Meeting indexed: {len(indexed_ids) if indexed_ids else 0} documents")
+        related = agent.query_related(summary_text, k=10)
+        recurring = agent.find_recurring_topics(threshold=3)
+        result = {
             "topic_continuity": {
                 "indexed_ids": indexed_ids,
-                "related": agent.query_related(summary_text, k=10),
-                "recurring_topics": agent.find_recurring_topics(threshold=3),
+                "related": related,
+                "recurring_topics": recurring,
             }
         }
+        _log("workflow", f"✓ Topic continuity: {len(related)} related, {len(recurring)} recurring topics")
+        return result
     except Exception as exc:
+        _log("workflow", f"Topic continuity failed: {exc}")
         return {
             "topic_continuity": {"indexed_ids": [], "related": [], "recurring_topics": []},
             "topic_continuity_error": str(exc),
@@ -213,6 +245,7 @@ def topic_continuity_node(state: State) -> StateUpdate:
 
 def escalation_node(state: State) -> StateUpdate:
     """Apply deterministic escalation rules directly as a workflow tool node."""
+    _log("escalation_node: applying escalation rules")
     topic_context = state.get("topic_continuity") or {}
     history_report = state.get("action_history_report") or {}
     escalations = [
@@ -228,10 +261,12 @@ def escalation_node(state: State) -> StateUpdate:
         ]
         if len(matches) >= 3:
             escalations.append({"action_item": item, "reason": "overdue_3plus"})
+    _log(f"escalation_node: {len(escalations)} escalations detected")
     return {"escalations": {"escalations": escalations}}
 
 
 def final_report_node(state: State) -> StateUpdate:
+    _log("final_report_node: assembling final report")
     action_items = state.get("action_items")
     report = {
         "transcript": state.get("transcript_data"),
@@ -241,6 +276,7 @@ def final_report_node(state: State) -> StateUpdate:
         "topic_continuity": state.get("topic_continuity"),
         "escalations": state.get("escalations"),
     }
+    _log("final_report_node: report assembled")
     return {"final_report": report}
 
 

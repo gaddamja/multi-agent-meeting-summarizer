@@ -348,6 +348,9 @@ def extract_action_items(
     if not transcript.strip():
         raise ValueError("Transcript is empty after processing.")
     
+    print(f"[action_items] Model: {model_name}")
+    print(f"[action_items] Processing transcript: {len(transcript)} chars, {len(speakers)} speakers")
+    
     # Build and execute extraction prompt
     prompt = _build_action_item_prompt(transcript, speakers)
     raw_text = _generate_text(prompt, model_name, hf_token)
@@ -356,6 +359,7 @@ def extract_action_items(
     # Normalize and validate using Pydantic
     action_items_list = _normalize_action_items(raw_items)
     
+    print(f"[action_items] ✓ Extracted {action_items_list.total_count} action items")
     return action_items_list
 
 

@@ -31,9 +31,16 @@ class GradioWorkflowTests(unittest.TestCase):
             )
 
         run.assert_called_once()
-        self.assertEqual(len(result), 10)
-        self.assertEqual(result[1], "A short meeting.")
-        self.assertEqual(result[8]["executive_summary"], "A short meeting.")
+        # Returns 12 values: meeting_details_html, transcript_html, transcript_text,
+        # summary_html, action_rows, kanban_html, graph_path, report_md, report_pdf,
+        # summary (dict), action_objects (list), meeting_metadata (dict)
+        self.assertEqual(len(result), 12)
+        # Transcript text should be included
+        self.assertIn("A short meeting.", result[2])
+        # Summary dict with executive_summary is at index 9
+        self.assertEqual(result[9]["executive_summary"], "A short meeting.")
+        # Metadata dict is at index 11
+        self.assertEqual(result[11]["meeting_source"], "manual-test")
 
 
 if __name__ == "__main__":

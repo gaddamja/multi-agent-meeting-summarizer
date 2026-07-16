@@ -71,6 +71,23 @@ for candidate in ffmpeg_dirs:
         path_dirs.insert(0, candidate)
 os.environ["PATH"] = os.pathsep.join(path_dirs)
 
+import warnings
+import time
+import traceback
+from datetime import datetime
+warnings.filterwarnings("ignore", message="FP16 is not supported on CPU")
+warnings.filterwarnings("ignore", message="torchcodec is not installed correctly")
+warnings.filterwarnings("ignore", message=".*Could not load libtorchcodec.*")
+warnings.filterwarnings("ignore", message=".*built-in audio decoding will fail.*")
+warnings.filterwarnings("ignore", category=UserWarning, module="pyannote.audio.core.io")
+warnings.filterwarnings("ignore", message="std\\(\\): degrees of freedom is <= 0.*")
+
+
+def _log(prefix: str, message: str) -> None:
+    """Log a message with timestamp."""
+    timestamp = datetime.now().strftime("%H:%M:%S")
+    print(f"[{timestamp}] [{prefix}] {message}")
+
 try:
     import numpy as np
     import soundfile as sf
@@ -94,36 +111,167 @@ def find_ffmpeg() -> str:
     raise RuntimeError("ffmpeg executable not found. Install ffmpeg or add it to PATH.")
 
 
-def load_audio_tensor(audio_path: str) -> Dict[str, object]:
+def detect_silence_segments(audio_path: str, silence_threshold: str = "-50dB", min_silence_duration: float = 0.5) -> tuple[List[Dict[str, float]], float]:
+    """Detect silent segments in audio using ffmpeg.
+    
+    Args:
+        audio_path: Path to audio file
+        silence_threshold: Silence threshold in dB (default: -50dB)
+        min_silence_duration: Minimum silence duration in seconds
+    
+    Returns:
+        Tuple of (list of non-silent segments, total duration)
+    """
+    ffmpeg = find_ffmpeg()
+    
+    # Use silencedetect filter to find silent periods
+    cmd = [
+        ffmpeg, "-i", audio_path,
+        "-af", f"silencedetect=noise={silence_threshold}:d={min_silence_duration}",
+        "-f", "null", "-"
+    ]
+    
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    output = result.stderr
+    
+    # Parse silence detection output
+    silence_starts = []
+    silence_ends = []
+    
+    for line in output.split('\n'):
+        if 'silence_start:' in line:
+            try:
+                time_str = line.split('silence_start:')[1].strip()
+                silence_starts.append(float(time_str))
+            except (ValueError, IndexError):
+                pass
+        elif 'silence_end:' in line:
+            try:
+                time_str = line.split('silence_end:')[1].split()[0].strip()
+                silence_ends.append(float(time_str))
+            except (ValueError, IndexError):
+                pass
+    
+    # Get total duration
+    duration_cmd = [
+        ffmpeg, "-i", audio_path,
+        "-f", "null", "-"
+    ]
+    duration_result = subprocess.run(duration_cmd, capture_output=True, text=True)
+    
+    total_duration = 0.0
+    for line in duration_result.stderr.split('\n'):
+        if 'Duration:' in line:
+            try:
+                time_str = line.split('Duration:')[1].split(',')[0].strip()
+                parts = time_str.split(':')
+                total_duration = float(parts[0]) * 3600 + float(parts[1]) * 60 + float(parts[2])
+                break
+            except (ValueError, IndexError):
+                pass
+    
+    # Build non-silent segments
+    segments = []
+    current_start = 0.0
+    
+    for silence_start, silence_end in zip(silence_starts, silence_ends):
+        if silence_start > current_start:
+            segments.append({
+                "start": current_start,
+                "end": silence_start
+            })
+        current_start = silence_end
+    
+    # Add final segment after last silence
+    if current_start < total_duration:
+        segments.append({
+            "start": current_start,
+            "end": total_duration
+        })
+    
+    return segments, total_duration
+
+
+def load_audio_tensor(audio_path: str, trim_silence: bool = False, 
+                      silence_threshold: str = "-50dB", 
+                      min_silence_duration: float = 0.5) -> Dict[str, object]:
+    """Load audio file and convert to tensor.
+    
+    Args:
+        audio_path: Path to audio file
+        trim_silence: If True, trim silence to speed up processing
+        silence_threshold: Silence threshold in dB (default: -50dB)
+        min_silence_duration: Minimum silence duration in seconds (default: 0.5s)
+    """
     if sf is None or np is None or torch is None:
         raise RuntimeError("soundfile, numpy, and torch are required for preloading audio")
+    
+    ffmpeg = find_ffmpeg()
+    
+    # First, convert to WAV if needed
+    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+        temp_wav = tmp.name
     try:
-        data, sample_rate = sf.read(audio_path, always_2d=True)
+        subprocess.run([ffmpeg, "-y", "-i", audio_path, "-ar", "16000", "-ac", "1", temp_wav], 
+                      check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        
+        if trim_silence:
+            _log("audio", "Detecting and removing silence segments...")
+            non_silent_segments, total_duration = detect_silence_segments(temp_wav, silence_threshold, min_silence_duration)
+            
+            if non_silent_segments:
+                _log("audio", f"Found {len(non_silent_segments)} non-silent segments")
+                
+                # Create filter complex to concatenate non-silent segments
+                filter_parts = []
+                for i, seg in enumerate(non_silent_segments):
+                    filter_parts.append(
+                        f"[0:a]atrim=start={seg['start']}:end={seg['end']},asetpts=PTS-STARTPTS[a{i}]"
+                    )
+                
+                # Concatenate all segments
+                concat_inputs = "".join([f"[a{i}]" for i in range(len(non_silent_segments))])
+                filter_complex = ";".join(filter_parts) + f";{concat_inputs}concat=n={len(non_silent_segments)}:v=0:a=1[out]"
+                
+                trimmed_wav = temp_wav + ".trimmed.wav"
+                subprocess.run([
+                    ffmpeg, "-y", "-i", temp_wav,
+                    "-filter_complex", filter_complex,
+                    "-map", "[out]", "-ar", "16000", "-ac", "1", trimmed_wav
+                ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                os.replace(trimmed_wav, temp_wav)
+                
+                # Calculate time saved
+                original_duration = sum(seg['end'] - seg['start'] for seg in non_silent_segments)
+                _log("audio", f"✓ Trimmed to {original_duration:.1f}s (removed {total_duration - original_duration:.1f}s of silence)")
+            else:
+                _log("audio", "No non-silent segments detected, using original audio")
+        
+        data, sample_rate = sf.read(temp_wav, always_2d=True)
         waveform = torch.from_numpy(data.T.astype(np.float32))
         return {"waveform": waveform, "sample_rate": int(sample_rate)}
-    except Exception:
-        ffmpeg = find_ffmpeg()
-        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
-            temp_wav = tmp.name
+    finally:
         try:
-            subprocess.run([ffmpeg, "-y", "-i", audio_path, "-ar", "16000", "-ac", "1", temp_wav], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            data, sample_rate = sf.read(temp_wav, always_2d=True)
-            waveform = torch.from_numpy(data.T.astype(np.float32))
-            return {"waveform": waveform, "sample_rate": int(sample_rate)}
-        finally:
-            try:
-                os.unlink(temp_wav)
-            except OSError:
-                pass
+            os.unlink(temp_wav)
+        except OSError:
+            pass
 
 
 def transcribe_whisper(audio_path: str, model_name: str = "small") -> Dict:
     if whisper is None:
         raise RuntimeError("openai-whisper is not installed. Install via pip install openai-whisper")
+    _log("transcription", f"Loading Whisper model '{model_name}'...")
     model = whisper.load_model(model_name)
+    _log("transcription", f"Starting transcription: {audio_path}")
     result = model.transcribe(audio_path, verbose=False)
+    segments = result.get("segments", [])
+    _log("transcription", f"✓ Completed: {len(segments)} segments detected")
     # result contains 'text' and 'segments' with start/end/time
     return result
+
+
+# Cache for diarization pipeline to avoid re-loading
+_diarization_pipeline_cache = {}
 
 
 def diarize_pyannote(audio_path: str, hf_token: Optional[str] = None) -> List[Dict]:
@@ -135,25 +283,70 @@ def diarize_pyannote(audio_path: str, hf_token: Optional[str] = None) -> List[Di
     if hf_token:
         os.environ["HUGGINGFACE_TOKEN"] = hf_token
         # Also log in via huggingface_hub to ensure token is recognized
-        try:
-            from huggingface_hub import login
-            login(token=hf_token, add_to_git_credential=False)
-        except Exception as login_err:
-            print(f"[warning] Could not log in to Hugging Face: {login_err}")
+    try:
+        from huggingface_hub import login
+        login(token=hf_token, add_to_git_credential=False)
+    except Exception as login_err:
+        _log("warning", f"Could not log in to Hugging Face: {login_err}")
 
     try:
-        pipeline = Pipeline.from_pretrained("pyannote/speaker-diarization-3.1", use_auth_token=True)
-        audio = load_audio_tensor(audio_path)
+        # Use cached pipeline if available
+        cache_key = hf_token or "no_token"
+        if cache_key not in _diarization_pipeline_cache:
+            _log("diarization", "Loading pyannote diarization model (first time only)...")
+            pipeline = Pipeline.from_pretrained(
+                "pyannote/speaker-diarization-3.1",
+                token=hf_token,  # Pass token directly to authenticate gated repo
+            )
+            _diarization_pipeline_cache[cache_key] = pipeline
+            _log("diarization", "✓ Model loaded and cached")
+        else:
+            pipeline = _diarization_pipeline_cache[cache_key]
+        
+        _log("diarization", "Processing audio (this may take several minutes)...")
+        start_time = time.time()
+        
+        # Load audio without silence trimming for diarization (use original audio)
+        audio = load_audio_tensor(audio_path, trim_silence=False)
         diarization = pipeline(audio)
+        
         segments = []
-        for turn, _, speaker in diarization.itertracks(yield_label=True):
-            segments.append({"start": float(turn.start), "end": float(turn.end), "speaker": speaker})
+        # Handle different pyannote API versions
+        if hasattr(diarization, 'itertracks'):
+            # Old API: itertracks(yield_label=True)
+            for turn, _, speaker in diarization.itertracks(yield_label=True):
+                segments.append({"start": float(turn.start), "end": float(turn.end), "speaker": speaker})
+        elif hasattr(diarization, 'speakers_diarization'):
+            # New API: speakers_diarization property
+            for turn, speaker in diarization.speakers_diarization.items():
+                segments.append({"start": float(turn.start), "end": float(turn.end), "speaker": speaker})
+        elif hasattr(diarization, 'items'):
+            # Alternative new API
+            for turn, speaker in diarization.items():
+                segments.append({"start": float(turn.start), "end": float(turn.end), "speaker": speaker})
+        else:
+            # Fallback: try to access as dict-like object
+            for item in diarization:
+                if hasattr(item, 'start') and hasattr(item, 'end') and hasattr(item, 'speaker'):
+                    segments.append({"start": float(item.start), "end": float(item.end), "speaker": item.speaker})
+        
+        elapsed = time.time() - start_time
+        _log("diarization", f"✓ Completed: {len(segments)} speaker segments in {elapsed:.1f}s")
         return segments
     except Exception as e:
-        # Common failure modes: gated HF repo (401/403), network, or missing torchcodec.
+        # Log full exception details for debugging
         msg = str(e)
-        print("[warning] Speaker diarization failed:", msg)
-        print("[info] Continuing without diarization — transcript only will be returned.")
+        _log("error", f"Speaker diarization failed: {msg}")
+        _log("error", f"Exception type: {type(e).__name__}")
+        _log("error", "Full traceback:")
+        for line in traceback.format_exc().split('\n'):
+            _log("error", f"  {line}")
+        if "403" in msg or "restricted" in msg or "not in the authorized list" in msg:
+            _log("info", "To enable speaker diarization:")
+            _log("info", "  1. Visit https://hf.co/pyannote/speaker-diarization-3.1 and accept the user conditions")
+            _log("info", "  2. Generate a token at https://huggingface.co/settings/tokens")
+            _log("info", "  3. Provide the token in the app's Advanced Settings or via HF_TOKEN env var")
+        _log("info", "Continuing without diarization — transcript only will be returned.")
         return []
 
 
@@ -177,12 +370,22 @@ def assign_speakers(trans_segments: List[Dict], diarization_segments: List[Dict]
     return labelled
 
 
-def process_audio(audio_path: str, output_json: Optional[str] = None, model_name: str = "small", hf_token: Optional[str] = None) -> Dict:
+def process_audio(audio_path: str, output_json: Optional[str] = None, model_name: str = "small", hf_token: Optional[str] = None, skip_diarization: bool = False) -> Dict:
     """Run transcription and diarization and return structured result."""
     trans_result = transcribe_whisper(audio_path, model_name=model_name)
     trans_segments = trans_result.get("segments", [])
-    diarization_segments = diarize_pyannote(audio_path, hf_token=hf_token)
-    labelled = assign_speakers(trans_segments, diarization_segments)
+    
+    if skip_diarization:
+        _log("transcription", "Skipping diarization (skip_diarization=True)")
+        # Use transcript segments without speaker labels
+        labelled = [
+            {"start": seg.get("start", 0.0), "end": seg.get("end", 0.0), "speaker": "unknown", "text": seg.get("text", "").strip()}
+            for seg in trans_segments
+        ]
+    else:
+        diarization_segments = diarize_pyannote(audio_path, hf_token=hf_token)
+        labelled = assign_speakers(trans_segments, diarization_segments)
+    
     out = {"file": audio_path, "model": model_name, "transcript": trans_result.get("text", ""), "segments": labelled}
     if output_json:
         with open(output_json, "w", encoding="utf-8") as f:
@@ -198,6 +401,6 @@ if __name__ == "__main__":
     parser.add_argument("--model", default="small")
     parser.add_argument("--output", default="transcript.json")
     args = parser.parse_args()
-    print("Processing... this may take a while")
+    _log("main", "Processing... this may take a while")
     res = process_audio(args.audio, output_json=args.output, model_name=args.model)
-    print(f"Wrote {args.output}")
+    _log("main", f"Wrote {args.output}")

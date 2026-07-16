@@ -279,10 +279,14 @@ def summarize_transcript(
         meeting_duration = 0.0
 
     needs_map_reduce = meeting_duration >= LONG_MEETING_THRESHOLD_SECONDS
+    print(f"[summary] Model: {model_name}, Meeting duration: {int(meeting_duration//60)}m {int(meeting_duration%60)}s")
+    
     if needs_map_reduce and segments is not None:
         chunks = _chunk_segments(segments)
+        print(f"[summary] Long meeting detected ({len(chunks)} chunks). Using map-reduce strategy...")
         partial_summaries: List[Dict[str, Any]] = []
         for idx, chunk in enumerate(chunks, start=1):
+            print(f"[summary] Processing chunk {idx}/{len(chunks)}...")
             partial = summarize_chunk(
                 chunk,
                 model_name=model_name,
@@ -291,7 +295,9 @@ def summarize_transcript(
                 total_chunks=len(chunks),
             )
             partial_summaries.append(partial)
+            print(f"[summary] ✓ Chunk {idx}/{len(chunks)} summarized")
 
+        print(f"[summary] Combining {len(partial_summaries)} chunk summaries...")
         combine_prompt_parts = [
             "You are combining several chunk-level meeting summaries into one final summary.",
             "Each chunk summary is valid JSON with the keys executive_summary, key_decisions, discussion_topics, and unresolved_items.",
@@ -306,15 +312,23 @@ def summarize_transcript(
         combine_prompt = "\n".join(combine_prompt_parts)
         raw_text = _generate_text(combine_prompt, model_name, hf_token)
         final_summary = _normalize_summary(_parse_json_response(raw_text))
+        print(f"[summary] ✓ Chunks combined into final summary")
     else:
+        print(f"[summary] Generating summary...")
         transcript = transcript_text or _segments_to_transcript(segments or [])
         prompt = _build_prompt(transcript)
         raw_text = _generate_text(prompt, model_name, hf_token)
         final_summary = _normalize_summary(_parse_json_response(raw_text))
+        print(f"[summary] ✓ Summary generated")
 
     if output_json:
+        print(f"[summary] Saving summary to: {output_json}")
         with open(output_json, "w", encoding="utf-8") as output_file:
             json.dump(final_summary, output_file, ensure_ascii=False, indent=2)
+    
+    print(f"[summary] Results: {len(final_summary.get('key_decisions', []))} decisions, "
+          f"{len(final_summary.get('discussion_topics', []))} topics, "
+          f"{len(final_summary.get('unresolved_items', []))} unresolved items")
     return final_summary
 
 

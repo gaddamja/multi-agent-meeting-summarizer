@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS meetings (
     meeting_date TEXT,
     title TEXT,
     transcript_text TEXT,
+    transcript_segments_json TEXT,
     summary_json TEXT,
     executive_summary TEXT,
     participants_json TEXT,
@@ -51,7 +52,6 @@ CREATE TABLE IF NOT EXISTS action_items (
 );
 CREATE INDEX IF NOT EXISTS idx_meetings_meeting_id ON meetings(meeting_id);
 CREATE INDEX IF NOT EXISTS idx_meetings_created_at ON meetings(created_at);
-CREATE INDEX IF NOT EXISTS idx_action_items_meeting_id ON action_items(meeting_id);
 CREATE INDEX IF NOT EXISTS idx_action_items_assignee ON action_items(assignee);
 CREATE INDEX IF NOT EXISTS idx_action_items_status ON action_items(status);
 CREATE INDEX IF NOT EXISTS idx_action_items_deadline_parsed ON action_items(deadline_parsed);
@@ -71,11 +71,18 @@ class ActionHistoryAgent:
         Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
         with self._connect() as conn:
             conn.executescript(CREATE_TABLE_SQL)
-            columns = {
+            # Migrate action_items table
+            action_columns = {
                 row[1] for row in conn.execute("PRAGMA table_info(action_items)").fetchall()
             }
-            if "meeting_id" not in columns:
+            if "meeting_id" not in action_columns:
                 conn.execute("ALTER TABLE action_items ADD COLUMN meeting_id TEXT")
+            # Migrate meetings table
+            meeting_columns = {
+                row[1] for row in conn.execute("PRAGMA table_info(meetings)").fetchall()
+            }
+            if "transcript_segments_json" not in meeting_columns:
+                conn.execute("ALTER TABLE meetings ADD COLUMN transcript_segments_json TEXT")
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_action_items_meeting_id ON action_items(meeting_id)"
             )
@@ -154,8 +161,10 @@ class ActionHistoryAgent:
         meeting_date: Optional[str] = None,
         title: Optional[str] = None,
         transcript_text: Optional[str] = None,
+        transcript_segments: Optional[List[Dict[str, Any]]] = None,
         participants: Optional[List[str]] = None,
     ) -> str:
+        print(f"[history] Saving meeting to database: {meeting_source or 'unknown_source'}")
         now = datetime.datetime.utcnow().isoformat()
         stable_meeting_id = meeting_id or str(uuid.uuid4())
         summary_data = summary or {}
@@ -173,18 +182,20 @@ class ActionHistoryAgent:
                     meeting_date,
                     title,
                     transcript_text,
+                    transcript_segments_json,
                     summary_json,
                     executive_summary,
                     participants_json,
                     topics_json,
                     created_at,
                     updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(meeting_id) DO UPDATE SET
                     meeting_source = excluded.meeting_source,
                     meeting_date = excluded.meeting_date,
                     title = excluded.title,
                     transcript_text = excluded.transcript_text,
+                    transcript_segments_json = excluded.transcript_segments_json,
                     summary_json = excluded.summary_json,
                     executive_summary = excluded.executive_summary,
                     participants_json = excluded.participants_json,
@@ -197,6 +208,7 @@ class ActionHistoryAgent:
                     meeting_date,
                     title,
                     transcript_text,
+                    self._json_dumps(transcript_segments),
                     self._json_dumps(summary_data),
                     executive_summary,
                     self._json_dumps(participants or []),
@@ -206,6 +218,7 @@ class ActionHistoryAgent:
                 ),
             )
             conn.commit()
+        print(f"[history] ✓ Meeting saved: {stable_meeting_id}")
         return stable_meeting_id
 
     def save_action_items(
@@ -216,6 +229,7 @@ class ActionHistoryAgent:
         meeting_date: Optional[str] = None,
         status: str = "open",
     ) -> List[int]:
+        print(f"[history] Saving {action_items.total_count} action items...")
         now = datetime.datetime.utcnow().isoformat()
         normalized_status = self._normalize_status(status)
         inserted_ids: List[int] = []
@@ -259,6 +273,7 @@ class ActionHistoryAgent:
                 inserted_ids.append(cursor.lastrowid)
             conn.commit()
 
+        print(f"[history] ✓ Saved {len(inserted_ids)} action items to database")
         return inserted_ids
 
     def update_status(self, item_id: int, status: str) -> None:
@@ -381,6 +396,7 @@ class ActionHistoryAgent:
         reference_date: Optional[str] = None,
         meeting_source: Optional[str] = None,
     ) -> Dict[str, Any]:
+        print(f"[history] Building action items health report...")
         participants = sorted({item.assignee for item in current_action_items.action_items})
         overdue = self.get_overdue_items(reference_date=reference_date)
 
@@ -413,6 +429,7 @@ class ActionHistoryAgent:
         }
         status_counts["open"] = current_action_items.total_count
 
+        print(f"[history] ✓ Report: {len(overdue)} overdue, {len(recurring)} recurring items")
         report = {
             "meeting_source": None,
             "meeting_date": None,
