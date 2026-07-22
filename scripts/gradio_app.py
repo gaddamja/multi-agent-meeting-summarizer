@@ -1012,6 +1012,78 @@ def _build_health_report_html(report: Dict[str, Any]) -> str:
     return "".join(parts)
 
 
+def _build_escalations_html(escalations: Optional[Dict[str, Any]]) -> str:
+    """Build an HTML summary of escalation report."""
+    if not escalations:
+        return _empty_state_html("🚨", "No escalations", "Process a meeting to see escalation report.")
+
+    escalation_list = escalations.get("escalations", [])
+    if not escalation_list:
+        return _empty_state_html("✅", "No escalations", "All clear — no items met escalation criteria.")
+
+    blocks: List[str] = []
+    
+    # Summary metric
+    blocks.append(
+        f'<div class="summary-block fade-in">'
+        f'<h4 style="color:#dc2626;">🚨 Escalation Report</h4>'
+        f'<p style="font-size:13px;color:var(--slate-500);margin:0 0 12px;">'
+        f'{len(escalation_list)} item(s) require attention based on recurrence and overdue criteria.</p>'
+        f'</div>'
+    )
+
+    # Recurring topic escalations
+    recurring_escalations = [e for e in escalation_list if e.get("reason") == "recurring"]
+    if recurring_escalations:
+        items = []
+        for esc in recurring_escalations:
+            topic = esc.get("topic", "Unknown")
+            items.append(
+                f'<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;'
+                f'margin-bottom:8px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;">'
+                f'<span style="font-size:18px;">🔁</span>'
+                f'<div>'
+                f'<strong style="color:#991b1b;font-size:14px;">{html.escape(str(topic))}</strong>'
+                f'<p style="margin:2px 0 0;color:#92400e;font-size:12px;">Recurring topic — appeared in 3 or more meetings</p>'
+                f'</div></div>'
+            )
+        blocks.append(
+            '<div class="summary-block fade-in fade-in-d1">'
+            '<h4 style="color:#dc2626;">🔁 Recurring Topic Escalations</h4>'
+            f'{"".join(items)}'
+            '</div>'
+        )
+
+    # Overdue action item escalations
+    overdue_escalations = [e for e in escalation_list if e.get("reason") == "overdue_3plus"]
+    if overdue_escalations:
+        items = []
+        for esc in overdue_escalations:
+            action_item = esc.get("action_item", {})
+            item_text = action_item.get("action_item", "Unknown item")
+            assignee = action_item.get("assignee", "Unassigned")
+            deadline = action_item.get("deadline", "N/A")
+            items.append(
+                f'<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;'
+                f'margin-bottom:8px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;">'
+                f'<span style="font-size:18px;flex-shrink:0;">⚠️</span>'
+                f'<div style="flex:1;">'
+                f'<strong style="color:#92400e;font-size:14px;">{html.escape(str(item_text))}</strong>'
+                f'<p style="margin:2px 0 0;color:#92400e;font-size:12px;">'
+                f'Assignee: {html.escape(str(assignee))} | Due: {html.escape(str(deadline))}</p>'
+                f'<p style="margin:2px 0 0;color:#92400e;font-size:12px;">Overdue with 3+ related historical references</p>'
+                f'</div></div>'
+            )
+        blocks.append(
+            '<div class="summary-block fade-in fade-in-d2">'
+            '<h4 style="color:#d97706;">⚠️ Overdue Item Escalations</h4>'
+            f'{"".join(items)}'
+            '</div>'
+        )
+
+    return '<div class="summary-wrap">' + "".join(blocks) + "</div>"
+
+
 def _build_topic_continuity_html(topic_continuity: Optional[Dict[str, Any]]) -> str:
     """Build an HTML summary of cross-meeting topic continuity from ChromaDB data."""
     if not topic_continuity:
@@ -1203,6 +1275,7 @@ def _default_ui_state() -> Dict[str, Any]:
         "action_items": [],
         "kanban_html": "",
         "topic_continuity_html": "",
+        "escalations_html": "",
         "report_md": None,
         "report_pdf": None,
     }
@@ -1373,6 +1446,22 @@ def _load_meeting_state(meeting_id: str, db_path: str = DEFAULT_HISTORY_DB) -> D
     state["action_rows"] = action_rows
     state["action_items"] = _rows_to_action_objects(action_rows)
     state["kanban_html"] = _build_kanban_html(state["action_items"])
+    # Compute escalation report for loaded meeting
+    from src.state_graph import escalation_node
+    from src.agents.action_history_agent import ActionHistoryAgent
+    agent = ActionHistoryAgent(db_path=DEFAULT_HISTORY_DB)
+    health_report = agent.build_health_report(
+        ActionItemList(action_items=state["action_items"]),
+        reference_date=datetime.date.today().isoformat(),
+        meeting_source=meeting_metadata.get("meeting_source"),
+    )
+    topic_continuity = {"recurring_topics": [], "related": []}
+    escalation_state = {
+        "action_history_report": health_report,
+        "topic_continuity": topic_continuity,
+    }
+    escalation_updates = escalation_node(escalation_state)
+    state["escalations_html"] = _build_escalations_html(escalation_updates.get("escalations"))
     if not state["summary_html"] or "No summary available" in state["summary_html"]:
         state["summary_html"] = _empty_state_html(
             "📝", "Summary restored from history",
@@ -1457,7 +1546,7 @@ def _restore_ui_from_state(state: Optional[Dict[str, Any]]) -> Tuple[str, str, s
         restored["summary_html"],
         restored["action_rows"],
         restored["kanban_html"],
-        restored["topic_continuity_html"],
+        restored["escalations_html"],
         restored["report_md"],
         restored["report_pdf"],
         restored,
@@ -1619,6 +1708,8 @@ def process_meeting_with_error_handling(
         topic_continuity = workflow_state.get("topic_continuity")
         topic_continuity_html = _build_topic_continuity_html(topic_continuity)
         recurring_topics_from_continuity = (topic_continuity or {}).get("recurring_topics", [])
+        escalations = workflow_state.get("escalations")
+        escalations_html = _build_escalations_html(escalations)
         report_md = _build_report_markdown(
             meeting_source, meeting_date, transcript_data, summary,
             action_objects, health_report, recurring_topics_from_continuity,
@@ -1638,6 +1729,7 @@ def process_meeting_with_error_handling(
             rows,
             kanban_html,
             topic_continuity_html,
+            escalations_html,
             _file_output_value(report_md_path),
             _file_output_value(report_pdf_path),
             summary,
@@ -1834,8 +1926,8 @@ def launch_ui() -> None:
                             )
                         kanban_output = gr.HTML(label="Kanban board")
 
-                    with gr.TabItem("🔗 Topic Continuity"):
-                        topic_continuity_output = gr.HTML(label="Cross-meeting topic context")
+                    with gr.TabItem("🚨 Escalations"):
+                        escalations_output = gr.HTML(label="Escalation report")
 
                     with gr.TabItem("📄 Report"):
                         with gr.Row():
@@ -1877,20 +1969,21 @@ def launch_ui() -> None:
                 "action_rows": result[4],
                 "kanban_html": result[5],
                 "topic_continuity_html": result[6],
-                "report_md": result[7],
-                "report_pdf": result[8],
-                "summary": result[9],
-                "action_items": result[10],
-                "meeting_metadata": result[11],
+                "escalations_html": result[7],
+                "report_md": result[8],
+                "report_pdf": result[9],
+                "summary": result[10],
+                "action_items": result[11],
+                "meeting_metadata": result[12],
             }
             choices = _list_meeting_choices()
             selected = choices[0] if choices else None
-            return result[:9] + (state_payload, gr.update(choices=choices, value=selected), '<div class="success-toast">✅ Meeting processed and saved successfully.</div>')
+            return result[:10] + (state_payload, gr.update(choices=choices, value=selected), '<div class="success-toast">✅ Meeting processed and saved successfully.</div>')
 
         process_btn_inputs = [audio_input, transcript_input, hf_token, whisper_model, summary_model, action_model, meeting_name, skip_diarization]
         process_btn_outputs = [
             meeting_details_output, transcript_view, transcript_text_output, summary_output,
-            action_table, kanban_output, topic_continuity_output, report_md_file, report_pdf_file,
+            action_table, kanban_output, escalations_output, report_md_file, report_pdf_file,
             persisted_ui_state, meeting_selector, pipeline_status,
         ]
         # Enable queue for longer timeouts
@@ -1904,14 +1997,15 @@ def launch_ui() -> None:
             empty_transcript = _empty_state_html("🎙️", "No transcript", "Run the meeting pipeline to see the transcript.")
             empty_summary = _empty_state_html("📝", "No summary", "Run the meeting pipeline to see the summary.")
             empty_kanban = _empty_state_html("📋", "No action items", "Run the meeting pipeline to extract action items.")
+            empty_escalations = _empty_state_html("🚨", "No escalations", "Process a meeting to see escalation report.")
             return (
                 empty_details, empty_transcript, "", empty_summary, [],
-                empty_kanban, "", None, None, empty, "",
+                empty_kanban, "", empty_escalations, None, None, empty, "", "",
             )
 
         clear_btn_outputs = [
             meeting_details_output, transcript_view, transcript_text_output, summary_output,
-            action_table, kanban_output, topic_continuity_output, report_md_file, report_pdf_file,
+            action_table, kanban_output, escalations_output, report_md_file, report_pdf_file,
             persisted_ui_state, pipeline_status,
         ]
         clear_btn.click(fn=clear_all, outputs=clear_btn_outputs)
@@ -1921,7 +2015,7 @@ def launch_ui() -> None:
             inputs=[persisted_ui_state],
             outputs=[
                 meeting_details_output, transcript_view, transcript_text_output, summary_output,
-                action_table, kanban_output, topic_continuity_output, report_md_file, report_pdf_file,
+                action_table, kanban_output, escalations_output, report_md_file, report_pdf_file,
                 persisted_ui_state, pipeline_status,
             ],
         )
@@ -1936,7 +2030,7 @@ def launch_ui() -> None:
             inputs=[meeting_selector],
             outputs=[
                 meeting_details_output, transcript_view, transcript_text_output, summary_output,
-                action_table, kanban_output, topic_continuity_output, report_md_file, report_pdf_file,
+                action_table, kanban_output, escalations_output, report_md_file, report_pdf_file,
                 persisted_ui_state, pipeline_status,
             ],
         )
