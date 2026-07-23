@@ -1817,9 +1817,9 @@ def launch_ui() -> None:
         # ── Hero ────────────────────────────────────────────────
         gr.HTML(
             '<div class="hero-wrap fade-in">'
-            '<h1 class="hero-title">Meeting Summarizer</h1>'
-            '<p class="hero-sub">Upload audio, paste a transcript, or load a saved meeting — get structured summaries, action items, and topic continuity in seconds.</p>'
-            '<span class="hero-badge">⚡ AI-Powered Pipeline</span>'
+            '<h1 class="hero-title">✨ Meeting Intelligence Hub</h1>'
+            '<p class="hero-sub">Transform meetings into actionable insights with AI-powered summaries, action items, and escalation tracking.</p>'
+            '<span class="hero-badge">⚡ Multi-Agent Pipeline</span>'
             '</div>'
         )
 
@@ -1829,7 +1829,7 @@ def launch_ui() -> None:
             with gr.Column(scale=2, min_width=300):
                 # ── Input Card ──
                 with gr.Group(elem_classes=["glass-card", "padded"]):
-                    gr.Markdown("### 🎯 Input")
+                    gr.Markdown("#### 🎯 Input")
                     audio_input = gr.Audio(sources="upload", type="filepath", label="Upload meeting audio")
                     transcript_input = gr.Textbox(
                         lines=3,
@@ -1839,11 +1839,6 @@ def launch_ui() -> None:
                     meeting_name = gr.Textbox(
                         label="Meeting name / source",
                         placeholder="e.g. Weekly sync, client call",
-                    )
-                    skip_diarization = gr.Checkbox(
-                        label="Skip speaker diarization (faster processing)",
-                        value=False,
-                        info="Disable if you don't need speaker labels. Significantly speeds up processing.",
                     )
                     with gr.Accordion("⚙️ Advanced Settings", open=False):
                         hf_token = gr.Textbox(
@@ -1864,13 +1859,17 @@ def launch_ui() -> None:
                             label="Action item model",
                             value=DEFAULT_ACTION_MODEL,
                         )
+                        skip_diarization = gr.Checkbox(
+                            label="Skip speaker diarization (faster processing)",
+                            value=False,
+                        )
                     with gr.Row():
                         process_button = gr.Button("🚀 Run Pipeline", elem_classes="gradient-btn", scale=3, variant="primary")
                         clear_btn = gr.Button("🗑️ Clear", elem_classes="secondary-btn", scale=1)
 
                 # ── Saved Meetings Card ──
-                with gr.Group(elem_classes=["glass-card", "padded"]):
-                    gr.Markdown("### 📂 Saved Meetings")
+                with gr.Group(elem_classes=["glass-card", "padded"], visible=False):
+                    gr.Markdown("#### 📂 Saved Meetings")
                     with gr.Row():
                         meeting_selector = gr.Dropdown(
                             label="Select a meeting",
