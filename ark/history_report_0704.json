@@ -1,0 +1,18 @@
+{
+  "meeting_source": "ES2003a.Mix-Headset.wav",
+  "meeting_date": null,
+  "participant_count": 1,
+  "participants": [
+    "Ebenezer"
+  ],
+  "total_action_items": 1,
+  "status_counts": {
+    "open": 1,
+    "in-progress": 0,
+    "completed": 0
+  },
+  "overdue_items": [],
+  "recurring_items": [],
+  "database_path": "action_history.db",
+  "reference_date": "2026-07-04"
+}

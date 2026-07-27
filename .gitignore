@@ -1,0 +1,19 @@
+# Python cache files
+__pycache__/
+*.py[cod]
+
+# macOS metadata
+.DS_Store
+
+# Virtual environment
+.venv/
+
+# Generated meeting outputs
+action_items.json
+summary.json
+transcript.json
+out.json
+
+# Editor files
+*.swp
+*~

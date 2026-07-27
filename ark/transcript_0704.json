@@ -1,0 +1,1135 @@
+{
+  "file": "ES2003a.Mix-Headset.wav",
+  "model": "small",
+  "transcript": " Okay, well I think we're ready to begin. Right, my name's Adam Dugard, we're here because of Real Reaction. We have in the group... Ebenezer at Demisoy, would you like me to spoke with you? Yeah, go for it mate. NEZ. NEZ. ER. Ebenezer, and your role is? I'm the marketing expert. You're the marketing expert, okay. Next we have? Tara Grammar, T-A-R-I-K. T-R-I-K. And your role in this is? Industrial designer. Industrial designer. And lastly we have? Dave Cochran. And you're going to be the user interface designer. Okay. Right, this is the agenda for today's meeting. As you can see, we're opening, acquaintance, tool training, project plan, discussion and closing. We've already gotten through opening and partially through acquaintance. So the reason we're here, we're going to design a new remote control as you probably all know. The very broad overview is original, trendy and user friendly. Of course we'll have to go into a bit more detail than that. But personally I think the original is going to be a very key aspect of this design. There's a lot of remote controls out there anyway, so we're going to need something that's really going to set it apart. This is how today seems to be going to work. So we're going to be looking at the three K phases as you've probably already been told, the functional, conceptual and the detailed design. The first one is going to be covering the user requirements spec, technical functions, working design. The second seems to be conceptual components, properties, materials. And the last one is a detailed analysis of our design so far. Of course you've all got the similar emails I believe. What can I say? Every user, do you want to draw your favourite animal? Sure. The white board. Okay. I'm going to make this quick since we don't have much time. Okay. This is not the best picture in the world. Here we have an elephant. First point, begins with an E, same like Ebenezer. Also elephants have a very good memory, much like myself. And I can't remember back when I used to live in Nigeria, but I think I used to have a pet elephant. Elephants are big, strong and gentle and they have great memories. And it begins with an E, just like Ebenezer. Brilliantly done. Thank you. Derek, would you like to have a shot at the artistry? It's supposed to come all the way. Oh, you can clip them to your belt. Oh, thank you. You should also have your lapel mic on as well. Oh, that's good. We can clip them on. Okay. Yeah, there's this microphone as well that you... Just somewhere. It's just across there. That's it. Yep. Is this supposed to be a clip as well? I think so. Yeah, I'll follow you if you... There you go. You can probably just stick it in your pocket for now. I wouldn't worry too much. It should have a good range. Yeah, destroying your elephant here. Okay. All right. Here we have a tiger. I love tigers. They're the biggest cats. They're a project on cats in the wild when I was a kid. It was my favourite cat just because it looks the best. The stripes, orange. My dad used to talk about it. He's from Bangladesh. He used to tell me about it when I was a kid. They're just the most feared of animals in the wild. So that's why they don't end up like me really. Excellent. Thank you very much. Dave, would you like to have a dash? Okay. Okay. Okay. Monkey. I have a somewhat oblique reference, in fact, to my... I have a three-year-old daughter who is affectionately known as Miss Monkey. Monkeys have attitude, which I think is a good thing. And from the point of view of the study of human evolution, they and other primates are terribly interesting. Monkeys. This one seems to have perhaps more attitude than most. Okay. Okay. Hardly what I'd call the best drawing in the world, but it'll do for now. Also, not quite as feared as your average tiger, but cats are one of my favorite animals. They're very independent. They're snotty as hell at the best of times. And what can you say? You've got all of those qualities in an animal. Right. I think we've all managed to master every whiteboard there by looks of it. So onto it. Project finance. As you can see, 12.5 euros per unit. That's not a terrible lot as far as I'm aware. We're hoping to sell them for 25. If we're aiming for 50 million euros, we're going to have to be selling an awful lot of them. Oh, that was profit-aimed. That was an amount. So that's the amount made. Yeah. Okay. Well, 50 million. 25 euros in each one then. Right. An awful lot need to be sold. Okay. Now we better actually just get on with the meat of the project. So I'm going to guess that we've all used remote controls. Any ideas of where you think a new remote control could go into this market? Well, one thing I'm aware of is that there are sort of a very high price end of the market. There's an emerging market for touch screen LCD remotes that can be programmed in much more sophisticated ways. It's a conventional model. So you get the sort of, you get, you can redesign the interface to your own needs. You can program in macros and you get a much greater degree. I mean, you get these sort of 3 and 1, 5 and 1, whatever it is. But you can get integration between the different, the different things that is designed to control to a much greater extent. You can have one macro to turn the TV to the right channel, rewind the tape and the VCR and get it to play what's its rewind, for instance. Okay. It occurs to me there might be a niche for a remote that aimed towards some of that sort of functionality, but using a conventional push button design. And therefore putting it into a much lower price bracket. Okay. Yeah, that's true. With the price range we're looking at, going for a touch screen would probably be possibly a little bit. Yeah. But you think, again, something to control multiple units in a simple fashion. Yeah. I mean, you get ones that you can switch between multiple units. But something that could operate between multiple units in a more integrated fashion. So there's an ideally something into which we should have some at least limited facility for running macros. Would you be ideal something along the lines of one on button would turn on say the video recorded the TV, maybe the sound system as well on one go? For instance, I say, oh, or you press the play button for the DVD player and it turns the TV on and on to the right channel as well. Okay. That sounds like a good strong idea. Any takes this? Well, I've noticed that gaming is becoming quite popular with television. When I was younger, we used to play games using a cable, using the cable, subscribe cable providers. The remote controls get worn out really easily. And the remote control is not a great kind of keypad for playing games. So perhaps one that was more specialized for game playing or interactive television. They recently brought out this new remote control for people to set their favorite channels to record things. Instead of people entering again what time things start, you simply start a slider bar to say what time it begins. Yeah, I've heard I've seen the bar code design before. It's taken out the... you don't have to be really clever to use the remote control. I think for gaming, you want some big buttons for up, down, left and right, shoot. You want to be able to change angles in interactive television, so you need buttons to change the camera angle. Okay, well we're beginning to run out of time now, so we've got a couple of ideas. We'll have to work fast. As you can see, we've got 30 minutes until the next meeting, so we'll have to try and decide on some of the basic functionality, how the user interface might work. That'll be a key aspect, especially if the idea of some kind of macro facility, because you have to program it, you have to have a lot of response back, or at least some kind. And we're going to maybe try and have to figure out... What the user wants. What the user wants, yes. Right, has anybody got anything they'd like to add at this stage, anything they think might have been missed so far? Well, when you're talking about gaming, do you think they should have some sort of stick on it rather than buttons? Oh, okay, that's it. Like control buttons, you know, of games, but is that ridiculous? I don't see why, almost everybody's probably used to a console by now, and all of them incorporate small d-pads on them. In fact, even the mobile phones these days are beginning to use them as well, so it's probably an interface that most people are used to. And that could allow easy navigation users a joystick as well. Maybe the other key feature that would be a good idea of building is to make something fairly sort of ergonomic, something that fits as comfortably as possible into the hand. Of course, it also allows for the possibility of a more sort of slightly unconventional, attractive shape for it overall. So, small, stylish, and something that's just a little bit different. Or slightly sort of biomorphic in form, which it would need to be sort of conformed with the shape of the hand more efficiently anyway. Okay, that's definitely something that we should be able to do quite easily. I would have hoped so anyway. Right. I'd say we finish this one up, we'll get started, I'll write up what we've kind of quickly done, and I'll get that out to everybody. Okay, yeah. Okay. I'm leaving to Jermak. As far as I'm aware, we leave the microphones here, unless we're told otherwise, and just take the laptop for us.",
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 5.0,
+      "speaker": "unknown",
+      "text": "Okay, well I think we're ready to begin."
+    },
+    {
+      "start": 5.0,
+      "end": 10.0,
+      "speaker": "unknown",
+      "text": "Right, my name's Adam Dugard, we're here because of Real Reaction."
+    },
+    {
+      "start": 10.0,
+      "end": 13.0,
+      "speaker": "unknown",
+      "text": "We have in the group..."
+    },
+    {
+      "start": 13.0,
+      "end": 18.0,
+      "speaker": "unknown",
+      "text": "Ebenezer at Demisoy, would you like me to spoke with you?"
+    },
+    {
+      "start": 18.0,
+      "end": 20.0,
+      "speaker": "unknown",
+      "text": "Yeah, go for it mate."
+    },
+    {
+      "start": 20.0,
+      "end": 22.0,
+      "speaker": "unknown",
+      "text": "NEZ."
+    },
+    {
+      "start": 22.0,
+      "end": 23.0,
+      "speaker": "unknown",
+      "text": "NEZ."
+    },
+    {
+      "start": 23.0,
+      "end": 24.0,
+      "speaker": "unknown",
+      "text": "ER."
+    },
+    {
+      "start": 24.0,
+      "end": 26.0,
+      "speaker": "unknown",
+      "text": "Ebenezer, and your role is?"
+    },
+    {
+      "start": 26.0,
+      "end": 28.0,
+      "speaker": "unknown",
+      "text": "I'm the marketing expert."
+    },
+    {
+      "start": 28.0,
+      "end": 33.0,
+      "speaker": "unknown",
+      "text": "You're the marketing expert, okay."
+    },
+    {
+      "start": 33.0,
+      "end": 34.0,
+      "speaker": "unknown",
+      "text": "Next we have?"
+    },
+    {
+      "start": 34.0,
+      "end": 36.0,
+      "speaker": "unknown",
+      "text": "Tara Grammar, T-A-R-I-K."
+    },
+    {
+      "start": 36.0,
+      "end": 38.0,
+      "speaker": "unknown",
+      "text": "T-R-I-K."
+    },
+    {
+      "start": 38.0,
+      "end": 40.0,
+      "speaker": "unknown",
+      "text": "And your role in this is?"
+    },
+    {
+      "start": 40.0,
+      "end": 41.0,
+      "speaker": "unknown",
+      "text": "Industrial designer."
+    },
+    {
+      "start": 41.0,
+      "end": 47.0,
+      "speaker": "unknown",
+      "text": "Industrial designer."
+    },
+    {
+      "start": 47.0,
+      "end": 49.0,
+      "speaker": "unknown",
+      "text": "And lastly we have?"
+    },
+    {
+      "start": 49.0,
+      "end": 53.0,
+      "speaker": "unknown",
+      "text": "Dave Cochran."
+    },
+    {
+      "start": 53.0,
+      "end": 56.0,
+      "speaker": "unknown",
+      "text": "And you're going to be the user interface designer."
+    },
+    {
+      "start": 56.0,
+      "end": 61.0,
+      "speaker": "unknown",
+      "text": "Okay."
+    },
+    {
+      "start": 61.0,
+      "end": 65.0,
+      "speaker": "unknown",
+      "text": "Right, this is the agenda for today's meeting."
+    },
+    {
+      "start": 65.0,
+      "end": 71.0,
+      "speaker": "unknown",
+      "text": "As you can see, we're opening, acquaintance, tool training, project plan, discussion and closing."
+    },
+    {
+      "start": 71.0,
+      "end": 76.0,
+      "speaker": "unknown",
+      "text": "We've already gotten through opening and partially through acquaintance."
+    },
+    {
+      "start": 76.0,
+      "end": 82.0,
+      "speaker": "unknown",
+      "text": "So the reason we're here, we're going to design a new remote control as you probably all know."
+    },
+    {
+      "start": 82.0,
+      "end": 85.0,
+      "speaker": "unknown",
+      "text": "The very broad overview is original, trendy and user friendly."
+    },
+    {
+      "start": 85.0,
+      "end": 89.0,
+      "speaker": "unknown",
+      "text": "Of course we'll have to go into a bit more detail than that."
+    },
+    {
+      "start": 89.0,
+      "end": 96.0,
+      "speaker": "unknown",
+      "text": "But personally I think the original is going to be a very key aspect of this design."
+    },
+    {
+      "start": 96.0,
+      "end": 106.0,
+      "speaker": "unknown",
+      "text": "There's a lot of remote controls out there anyway, so we're going to need something that's really going to set it apart."
+    },
+    {
+      "start": 106.0,
+      "end": 108.0,
+      "speaker": "unknown",
+      "text": "This is how today seems to be going to work."
+    },
+    {
+      "start": 108.0,
+      "end": 119.0,
+      "speaker": "unknown",
+      "text": "So we're going to be looking at the three K phases as you've probably already been told, the functional, conceptual and the detailed design."
+    },
+    {
+      "start": 119.0,
+      "end": 124.0,
+      "speaker": "unknown",
+      "text": "The first one is going to be covering the user requirements spec, technical functions, working design."
+    },
+    {
+      "start": 124.0,
+      "end": 127.0,
+      "speaker": "unknown",
+      "text": "The second seems to be conceptual components, properties, materials."
+    },
+    {
+      "start": 127.0,
+      "end": 132.0,
+      "speaker": "unknown",
+      "text": "And the last one is a detailed analysis of our design so far."
+    },
+    {
+      "start": 132.0,
+      "end": 138.0,
+      "speaker": "unknown",
+      "text": "Of course you've all got the similar emails I believe."
+    },
+    {
+      "start": 138.0,
+      "end": 143.0,
+      "speaker": "unknown",
+      "text": "What can I say? Every user, do you want to draw your favourite animal?"
+    },
+    {
+      "start": 143.0,
+      "end": 148.0,
+      "speaker": "unknown",
+      "text": "Sure."
+    },
+    {
+      "start": 148.0,
+      "end": 151.0,
+      "speaker": "unknown",
+      "text": "The white board."
+    },
+    {
+      "start": 151.0,
+      "end": 156.0,
+      "speaker": "unknown",
+      "text": "Okay."
+    },
+    {
+      "start": 156.0,
+      "end": 160.0,
+      "speaker": "unknown",
+      "text": "I'm going to make this quick since we don't have much time."
+    },
+    {
+      "start": 186.0,
+      "end": 213.0,
+      "speaker": "unknown",
+      "text": "Okay."
+    },
+    {
+      "start": 213.0,
+      "end": 216.0,
+      "speaker": "unknown",
+      "text": "This is not the best picture in the world."
+    },
+    {
+      "start": 216.0,
+      "end": 218.0,
+      "speaker": "unknown",
+      "text": "Here we have an elephant."
+    },
+    {
+      "start": 218.0,
+      "end": 223.0,
+      "speaker": "unknown",
+      "text": "First point, begins with an E, same like Ebenezer."
+    },
+    {
+      "start": 223.0,
+      "end": 227.0,
+      "speaker": "unknown",
+      "text": "Also elephants have a very good memory, much like myself."
+    },
+    {
+      "start": 227.0,
+      "end": 234.0,
+      "speaker": "unknown",
+      "text": "And I can't remember back when I used to live in Nigeria, but I think I used to have a pet elephant."
+    },
+    {
+      "start": 234.0,
+      "end": 238.0,
+      "speaker": "unknown",
+      "text": "Elephants are big, strong and gentle and they have great memories."
+    },
+    {
+      "start": 238.0,
+      "end": 243.0,
+      "speaker": "unknown",
+      "text": "And it begins with an E, just like Ebenezer."
+    },
+    {
+      "start": 243.0,
+      "end": 247.0,
+      "speaker": "unknown",
+      "text": "Brilliantly done. Thank you."
+    },
+    {
+      "start": 247.0,
+      "end": 253.0,
+      "speaker": "unknown",
+      "text": "Derek, would you like to have a shot at the artistry?"
+    },
+    {
+      "start": 253.0,
+      "end": 256.0,
+      "speaker": "unknown",
+      "text": "It's supposed to come all the way."
+    },
+    {
+      "start": 256.0,
+      "end": 258.0,
+      "speaker": "unknown",
+      "text": "Oh, you can clip them to your belt."
+    },
+    {
+      "start": 258.0,
+      "end": 259.0,
+      "speaker": "unknown",
+      "text": "Oh, thank you."
+    },
+    {
+      "start": 259.0,
+      "end": 263.0,
+      "speaker": "unknown",
+      "text": "You should also have your lapel mic on as well."
+    },
+    {
+      "start": 263.0,
+      "end": 267.0,
+      "speaker": "unknown",
+      "text": "Oh, that's good. We can clip them on."
+    },
+    {
+      "start": 267.0,
+      "end": 274.0,
+      "speaker": "unknown",
+      "text": "Okay. Yeah, there's this microphone as well that you..."
+    },
+    {
+      "start": 274.0,
+      "end": 284.0,
+      "speaker": "unknown",
+      "text": "Just somewhere."
+    },
+    {
+      "start": 284.0,
+      "end": 291.0,
+      "speaker": "unknown",
+      "text": "It's just across there. That's it."
+    },
+    {
+      "start": 291.0,
+      "end": 300.0,
+      "speaker": "unknown",
+      "text": "Yep."
+    },
+    {
+      "start": 300.0,
+      "end": 301.0,
+      "speaker": "unknown",
+      "text": "Is this supposed to be a clip as well?"
+    },
+    {
+      "start": 301.0,
+      "end": 302.0,
+      "speaker": "unknown",
+      "text": "I think so."
+    },
+    {
+      "start": 302.0,
+      "end": 305.0,
+      "speaker": "unknown",
+      "text": "Yeah, I'll follow you if you..."
+    },
+    {
+      "start": 305.0,
+      "end": 308.0,
+      "speaker": "unknown",
+      "text": "There you go."
+    },
+    {
+      "start": 308.0,
+      "end": 310.0,
+      "speaker": "unknown",
+      "text": "You can probably just stick it in your pocket for now."
+    },
+    {
+      "start": 310.0,
+      "end": 312.0,
+      "speaker": "unknown",
+      "text": "I wouldn't worry too much."
+    },
+    {
+      "start": 312.0,
+      "end": 317.0,
+      "speaker": "unknown",
+      "text": "It should have a good range."
+    },
+    {
+      "start": 317.0,
+      "end": 320.0,
+      "speaker": "unknown",
+      "text": "Yeah, destroying your elephant here."
+    },
+    {
+      "start": 340.0,
+      "end": 350.0,
+      "speaker": "unknown",
+      "text": "Okay."
+    },
+    {
+      "start": 370.0,
+      "end": 394.0,
+      "speaker": "unknown",
+      "text": "All right."
+    },
+    {
+      "start": 394.0,
+      "end": 398.0,
+      "speaker": "unknown",
+      "text": "Here we have a tiger."
+    },
+    {
+      "start": 398.0,
+      "end": 401.0,
+      "speaker": "unknown",
+      "text": "I love tigers. They're the biggest cats."
+    },
+    {
+      "start": 401.0,
+      "end": 404.0,
+      "speaker": "unknown",
+      "text": "They're a project on cats in the wild when I was a kid."
+    },
+    {
+      "start": 404.0,
+      "end": 408.0,
+      "speaker": "unknown",
+      "text": "It was my favourite cat just because it looks the best."
+    },
+    {
+      "start": 408.0,
+      "end": 410.0,
+      "speaker": "unknown",
+      "text": "The stripes, orange."
+    },
+    {
+      "start": 410.0,
+      "end": 411.0,
+      "speaker": "unknown",
+      "text": "My dad used to talk about it."
+    },
+    {
+      "start": 411.0,
+      "end": 412.0,
+      "speaker": "unknown",
+      "text": "He's from Bangladesh."
+    },
+    {
+      "start": 412.0,
+      "end": 415.0,
+      "speaker": "unknown",
+      "text": "He used to tell me about it when I was a kid."
+    },
+    {
+      "start": 415.0,
+      "end": 421.0,
+      "speaker": "unknown",
+      "text": "They're just the most feared of animals in the wild."
+    },
+    {
+      "start": 421.0,
+      "end": 428.0,
+      "speaker": "unknown",
+      "text": "So that's why they don't end up like me really."
+    },
+    {
+      "start": 428.0,
+      "end": 430.0,
+      "speaker": "unknown",
+      "text": "Excellent. Thank you very much."
+    },
+    {
+      "start": 430.0,
+      "end": 434.0,
+      "speaker": "unknown",
+      "text": "Dave, would you like to have a dash?"
+    },
+    {
+      "start": 451.0,
+      "end": 461.0,
+      "speaker": "unknown",
+      "text": "Okay."
+    },
+    {
+      "start": 481.0,
+      "end": 491.0,
+      "speaker": "unknown",
+      "text": "Okay."
+    },
+    {
+      "start": 511.0,
+      "end": 521.0,
+      "speaker": "unknown",
+      "text": "Okay."
+    },
+    {
+      "start": 541.0,
+      "end": 566.0,
+      "speaker": "unknown",
+      "text": "Monkey."
+    },
+    {
+      "start": 566.0,
+      "end": 570.0,
+      "speaker": "unknown",
+      "text": "I have a somewhat oblique reference, in fact, to my..."
+    },
+    {
+      "start": 570.0,
+      "end": 576.0,
+      "speaker": "unknown",
+      "text": "I have a three-year-old daughter who is affectionately known as Miss Monkey."
+    },
+    {
+      "start": 576.0,
+      "end": 580.0,
+      "speaker": "unknown",
+      "text": "Monkeys have attitude, which I think is a good thing."
+    },
+    {
+      "start": 580.0,
+      "end": 586.0,
+      "speaker": "unknown",
+      "text": "And from the point of view of the study of human evolution,"
+    },
+    {
+      "start": 586.0,
+      "end": 591.0,
+      "speaker": "unknown",
+      "text": "they and other primates are terribly interesting."
+    },
+    {
+      "start": 591.0,
+      "end": 595.0,
+      "speaker": "unknown",
+      "text": "Monkeys."
+    },
+    {
+      "start": 595.0,
+      "end": 606.0,
+      "speaker": "unknown",
+      "text": "This one seems to have perhaps more attitude than most."
+    },
+    {
+      "start": 606.0,
+      "end": 616.0,
+      "speaker": "unknown",
+      "text": "Okay."
+    },
+    {
+      "start": 636.0,
+      "end": 656.0,
+      "speaker": "unknown",
+      "text": "Okay."
+    },
+    {
+      "start": 656.0,
+      "end": 659.0,
+      "speaker": "unknown",
+      "text": "Hardly what I'd call the best drawing in the world, but it'll do for now."
+    },
+    {
+      "start": 659.0,
+      "end": 662.0,
+      "speaker": "unknown",
+      "text": "Also, not quite as feared as your average tiger,"
+    },
+    {
+      "start": 662.0,
+      "end": 665.0,
+      "speaker": "unknown",
+      "text": "but cats are one of my favorite animals."
+    },
+    {
+      "start": 665.0,
+      "end": 667.0,
+      "speaker": "unknown",
+      "text": "They're very independent."
+    },
+    {
+      "start": 667.0,
+      "end": 670.0,
+      "speaker": "unknown",
+      "text": "They're snotty as hell at the best of times."
+    },
+    {
+      "start": 670.0,
+      "end": 672.0,
+      "speaker": "unknown",
+      "text": "And what can you say?"
+    },
+    {
+      "start": 672.0,
+      "end": 680.0,
+      "speaker": "unknown",
+      "text": "You've got all of those qualities in an animal."
+    },
+    {
+      "start": 680.0,
+      "end": 681.0,
+      "speaker": "unknown",
+      "text": "Right."
+    },
+    {
+      "start": 681.0,
+      "end": 685.0,
+      "speaker": "unknown",
+      "text": "I think we've all managed to master every whiteboard there by looks of it."
+    },
+    {
+      "start": 685.0,
+      "end": 687.0,
+      "speaker": "unknown",
+      "text": "So onto it."
+    },
+    {
+      "start": 687.0,
+      "end": 689.0,
+      "speaker": "unknown",
+      "text": "Project finance."
+    },
+    {
+      "start": 689.0,
+      "end": 693.0,
+      "speaker": "unknown",
+      "text": "As you can see, 12.5 euros per unit."
+    },
+    {
+      "start": 693.0,
+      "end": 696.0,
+      "speaker": "unknown",
+      "text": "That's not a terrible lot as far as I'm aware."
+    },
+    {
+      "start": 696.0,
+      "end": 699.0,
+      "speaker": "unknown",
+      "text": "We're hoping to sell them for 25."
+    },
+    {
+      "start": 699.0,
+      "end": 705.0,
+      "speaker": "unknown",
+      "text": "If we're aiming for 50 million euros, we're going to have to be selling an awful lot of them."
+    },
+    {
+      "start": 705.0,
+      "end": 707.0,
+      "speaker": "unknown",
+      "text": "Oh, that was profit-aimed."
+    },
+    {
+      "start": 707.0,
+      "end": 709.0,
+      "speaker": "unknown",
+      "text": "That was an amount."
+    },
+    {
+      "start": 709.0,
+      "end": 711.0,
+      "speaker": "unknown",
+      "text": "So that's the amount made."
+    },
+    {
+      "start": 711.0,
+      "end": 712.0,
+      "speaker": "unknown",
+      "text": "Yeah."
+    },
+    {
+      "start": 712.0,
+      "end": 713.0,
+      "speaker": "unknown",
+      "text": "Okay."
+    },
+    {
+      "start": 713.0,
+      "end": 714.0,
+      "speaker": "unknown",
+      "text": "Well, 50 million."
+    },
+    {
+      "start": 714.0,
+      "end": 717.0,
+      "speaker": "unknown",
+      "text": "25 euros in each one then."
+    },
+    {
+      "start": 717.0,
+      "end": 718.0,
+      "speaker": "unknown",
+      "text": "Right."
+    },
+    {
+      "start": 718.0,
+      "end": 721.0,
+      "speaker": "unknown",
+      "text": "An awful lot need to be sold."
+    },
+    {
+      "start": 721.0,
+      "end": 722.0,
+      "speaker": "unknown",
+      "text": "Okay."
+    },
+    {
+      "start": 722.0,
+      "end": 726.0,
+      "speaker": "unknown",
+      "text": "Now we better actually just get on with the meat of the project."
+    },
+    {
+      "start": 726.0,
+      "end": 731.0,
+      "speaker": "unknown",
+      "text": "So I'm going to guess that we've all used remote controls."
+    },
+    {
+      "start": 731.0,
+      "end": 737.0,
+      "speaker": "unknown",
+      "text": "Any ideas of where you think a new remote control could go into this market?"
+    },
+    {
+      "start": 737.0,
+      "end": 743.0,
+      "speaker": "unknown",
+      "text": "Well, one thing I'm aware of is that there are sort of a very high price end of the market."
+    },
+    {
+      "start": 743.0,
+      "end": 753.0,
+      "speaker": "unknown",
+      "text": "There's an emerging market for touch screen LCD remotes that can be programmed in much more sophisticated ways."
+    },
+    {
+      "start": 753.0,
+      "end": 755.0,
+      "speaker": "unknown",
+      "text": "It's a conventional model."
+    },
+    {
+      "start": 755.0,
+      "end": 762.0,
+      "speaker": "unknown",
+      "text": "So you get the sort of, you get, you can redesign the interface to your own needs."
+    },
+    {
+      "start": 762.0,
+      "end": 766.0,
+      "speaker": "unknown",
+      "text": "You can program in macros and you get a much greater degree."
+    },
+    {
+      "start": 766.0,
+      "end": 770.0,
+      "speaker": "unknown",
+      "text": "I mean, you get these sort of 3 and 1, 5 and 1, whatever it is."
+    },
+    {
+      "start": 770.0,
+      "end": 778.0,
+      "speaker": "unknown",
+      "text": "But you can get integration between the different, the different things that is designed to control to a much greater extent."
+    },
+    {
+      "start": 778.0,
+      "end": 790.0,
+      "speaker": "unknown",
+      "text": "You can have one macro to turn the TV to the right channel, rewind the tape and the VCR and get it to play what's its rewind, for instance."
+    },
+    {
+      "start": 790.0,
+      "end": 791.0,
+      "speaker": "unknown",
+      "text": "Okay."
+    },
+    {
+      "start": 792.0,
+      "end": 806.0,
+      "speaker": "unknown",
+      "text": "It occurs to me there might be a niche for a remote that aimed towards some of that sort of functionality, but using a conventional push button design."
+    },
+    {
+      "start": 806.0,
+      "end": 812.0,
+      "speaker": "unknown",
+      "text": "And therefore putting it into a much lower price bracket."
+    },
+    {
+      "start": 812.0,
+      "end": 813.0,
+      "speaker": "unknown",
+      "text": "Okay."
+    },
+    {
+      "start": 813.0,
+      "end": 814.0,
+      "speaker": "unknown",
+      "text": "Yeah, that's true."
+    },
+    {
+      "start": 814.0,
+      "end": 820.0,
+      "speaker": "unknown",
+      "text": "With the price range we're looking at, going for a touch screen would probably be possibly a little bit."
+    },
+    {
+      "start": 820.0,
+      "end": 821.0,
+      "speaker": "unknown",
+      "text": "Yeah."
+    },
+    {
+      "start": 821.0,
+      "end": 826.0,
+      "speaker": "unknown",
+      "text": "But you think, again, something to control multiple units in a simple fashion."
+    },
+    {
+      "start": 826.0,
+      "end": 827.0,
+      "speaker": "unknown",
+      "text": "Yeah."
+    },
+    {
+      "start": 827.0,
+      "end": 831.0,
+      "speaker": "unknown",
+      "text": "I mean, you get ones that you can switch between multiple units."
+    },
+    {
+      "start": 831.0,
+      "end": 836.0,
+      "speaker": "unknown",
+      "text": "But something that could operate between multiple units in a more integrated fashion."
+    },
+    {
+      "start": 836.0,
+      "end": 845.0,
+      "speaker": "unknown",
+      "text": "So there's an ideally something into which we should have some at least limited facility for running macros."
+    },
+    {
+      "start": 845.0,
+      "end": 853.0,
+      "speaker": "unknown",
+      "text": "Would you be ideal something along the lines of one on button would turn on say the video recorded the TV, maybe the sound system as well on one go?"
+    },
+    {
+      "start": 853.0,
+      "end": 870.0,
+      "speaker": "unknown",
+      "text": "For instance, I say, oh, or you press the play button for the DVD player and it turns the TV on and on to the right channel as well."
+    },
+    {
+      "start": 870.0,
+      "end": 871.0,
+      "speaker": "unknown",
+      "text": "Okay."
+    },
+    {
+      "start": 871.0,
+      "end": 878.0,
+      "speaker": "unknown",
+      "text": "That sounds like a good strong idea."
+    },
+    {
+      "start": 878.0,
+      "end": 880.0,
+      "speaker": "unknown",
+      "text": "Any takes this?"
+    },
+    {
+      "start": 880.0,
+      "end": 886.0,
+      "speaker": "unknown",
+      "text": "Well, I've noticed that gaming is becoming quite popular with television."
+    },
+    {
+      "start": 886.0,
+      "end": 895.0,
+      "speaker": "unknown",
+      "text": "When I was younger, we used to play games using a cable, using the cable, subscribe cable providers."
+    },
+    {
+      "start": 895.0,
+      "end": 898.0,
+      "speaker": "unknown",
+      "text": "The remote controls get worn out really easily."
+    },
+    {
+      "start": 898.0,
+      "end": 904.0,
+      "speaker": "unknown",
+      "text": "And the remote control is not a great kind of keypad for playing games."
+    },
+    {
+      "start": 904.0,
+      "end": 910.0,
+      "speaker": "unknown",
+      "text": "So perhaps one that was more specialized for game playing or interactive television."
+    },
+    {
+      "start": 910.0,
+      "end": 918.0,
+      "speaker": "unknown",
+      "text": "They recently brought out this new remote control for people to set their favorite channels to record things."
+    },
+    {
+      "start": 918.0,
+      "end": 924.0,
+      "speaker": "unknown",
+      "text": "Instead of people entering again what time things start, you simply start a slider bar to say what time it begins."
+    },
+    {
+      "start": 924.0,
+      "end": 930.0,
+      "speaker": "unknown",
+      "text": "Yeah, I've heard I've seen the bar code design before."
+    },
+    {
+      "start": 930.0,
+      "end": 938.0,
+      "speaker": "unknown",
+      "text": "It's taken out the... you don't have to be really clever to use the remote control."
+    },
+    {
+      "start": 938.0,
+      "end": 943.0,
+      "speaker": "unknown",
+      "text": "I think for gaming, you want some big buttons for up, down, left and right, shoot."
+    },
+    {
+      "start": 943.0,
+      "end": 953.0,
+      "speaker": "unknown",
+      "text": "You want to be able to change angles in interactive television, so you need buttons to change the camera angle."
+    },
+    {
+      "start": 953.0,
+      "end": 957.0,
+      "speaker": "unknown",
+      "text": "Okay, well we're beginning to run out of time now, so we've got a couple of ideas."
+    },
+    {
+      "start": 957.0,
+      "end": 962.0,
+      "speaker": "unknown",
+      "text": "We'll have to work fast."
+    },
+    {
+      "start": 962.0,
+      "end": 970.0,
+      "speaker": "unknown",
+      "text": "As you can see, we've got 30 minutes until the next meeting, so we'll have to try and decide on some of the basic functionality,"
+    },
+    {
+      "start": 970.0,
+      "end": 973.0,
+      "speaker": "unknown",
+      "text": "how the user interface might work."
+    },
+    {
+      "start": 973.0,
+      "end": 978.0,
+      "speaker": "unknown",
+      "text": "That'll be a key aspect, especially if the idea of some kind of macro facility,"
+    },
+    {
+      "start": 978.0,
+      "end": 987.0,
+      "speaker": "unknown",
+      "text": "because you have to program it, you have to have a lot of response back, or at least some kind."
+    },
+    {
+      "start": 987.0,
+      "end": 991.0,
+      "speaker": "unknown",
+      "text": "And we're going to maybe try and have to figure out..."
+    },
+    {
+      "start": 991.0,
+      "end": 992.0,
+      "speaker": "unknown",
+      "text": "What the user wants."
+    },
+    {
+      "start": 992.0,
+      "end": 996.0,
+      "speaker": "unknown",
+      "text": "What the user wants, yes."
+    },
+    {
+      "start": 996.0,
+      "end": 1002.0,
+      "speaker": "unknown",
+      "text": "Right, has anybody got anything they'd like to add at this stage, anything they think might have been missed so far?"
+    },
+    {
+      "start": 1002.0,
+      "end": 1009.0,
+      "speaker": "unknown",
+      "text": "Well, when you're talking about gaming, do you think they should have some sort of stick on it rather than buttons?"
+    },
+    {
+      "start": 1009.0,
+      "end": 1010.0,
+      "speaker": "unknown",
+      "text": "Oh, okay, that's it."
+    },
+    {
+      "start": 1010.0,
+      "end": 1016.0,
+      "speaker": "unknown",
+      "text": "Like control buttons, you know, of games, but is that ridiculous?"
+    },
+    {
+      "start": 1016.0,
+      "end": 1023.0,
+      "speaker": "unknown",
+      "text": "I don't see why, almost everybody's probably used to a console by now, and all of them incorporate small d-pads on them."
+    },
+    {
+      "start": 1023.0,
+      "end": 1026.0,
+      "speaker": "unknown",
+      "text": "In fact, even the mobile phones these days are beginning to use them as well,"
+    },
+    {
+      "start": 1026.0,
+      "end": 1031.0,
+      "speaker": "unknown",
+      "text": "so it's probably an interface that most people are used to."
+    },
+    {
+      "start": 1032.0,
+      "end": 1038.0,
+      "speaker": "unknown",
+      "text": "And that could allow easy navigation users a joystick as well."
+    },
+    {
+      "start": 1045.0,
+      "end": 1055.0,
+      "speaker": "unknown",
+      "text": "Maybe the other key feature that would be a good idea of building is to make something fairly sort of ergonomic,"
+    },
+    {
+      "start": 1055.0,
+      "end": 1060.0,
+      "speaker": "unknown",
+      "text": "something that fits as comfortably as possible into the hand."
+    },
+    {
+      "start": 1060.0,
+      "end": 1075.0,
+      "speaker": "unknown",
+      "text": "Of course, it also allows for the possibility of a more sort of slightly unconventional, attractive shape for it overall."
+    },
+    {
+      "start": 1075.0,
+      "end": 1081.0,
+      "speaker": "unknown",
+      "text": "So, small, stylish, and something that's just a little bit different."
+    },
+    {
+      "start": 1081.0,
+      "end": 1088.0,
+      "speaker": "unknown",
+      "text": "Or slightly sort of biomorphic in form, which it would need to be sort of conformed with the shape of the hand more efficiently anyway."
+    },
+    {
+      "start": 1088.0,
+      "end": 1093.0,
+      "speaker": "unknown",
+      "text": "Okay, that's definitely something that we should be able to do quite easily."
+    },
+    {
+      "start": 1093.0,
+      "end": 1095.0,
+      "speaker": "unknown",
+      "text": "I would have hoped so anyway."
+    },
+    {
+      "start": 1095.0,
+      "end": 1097.0,
+      "speaker": "unknown",
+      "text": "Right."
+    },
+    {
+      "start": 1100.0,
+      "end": 1109.0,
+      "speaker": "unknown",
+      "text": "I'd say we finish this one up, we'll get started, I'll write up what we've kind of quickly done, and I'll get that out to everybody."
+    },
+    {
+      "start": 1109.0,
+      "end": 1111.0,
+      "speaker": "unknown",
+      "text": "Okay, yeah."
+    },
+    {
+      "start": 1111.0,
+      "end": 1113.0,
+      "speaker": "unknown",
+      "text": "Okay."
+    },
+    {
+      "start": 1114.0,
+      "end": 1119.0,
+      "speaker": "unknown",
+      "text": "I'm leaving to Jermak."
+    },
+    {
+      "start": 1119.0,
+      "end": 1127.0,
+      "speaker": "unknown",
+      "text": "As far as I'm aware, we leave the microphones here, unless we're told otherwise, and just take the laptop for us."
+    }
+  ]
+}
