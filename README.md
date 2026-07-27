@@ -7,6 +7,39 @@ This project provides a prototype multi-agent system that converts meeting audio
 - **Action Item Agent** — Identifies tasks, assignees, and deadlines from transcripts
  - **Action History Agent** — Persists action items in SQLite, tracks status, and flags overdue/recurring items
 
+## Prerequisites
+
+Before running setup, ensure you have:
+
+- **Python 3.9 or higher** — Verify with: `python3 --version`
+- **Hugging Face account** — Free account required for speaker diarization ([sign up](https://huggingface.co/join))
+- **Platform-specific requirements:**
+  - **macOS:** Homebrew must be installed ([brew.sh](https://brew.sh/))
+  - **Linux:** sudo privileges for system package installation
+  - **Windows:** FFmpeg must be installed manually (setup.sh does not handle Windows FFmpeg install)
+
+## Quick Start
+
+Get up and running in 2 steps:
+
+```bash
+# Step 1: Run automated setup (installs FFmpeg, PyTorch, dependencies, and sets up HF token)
+./scripts/setup.sh
+
+# Step 2: Launch the Gradio dashboard
+./scripts/run.sh
+```
+
+The setup script automatically:
+- Detects your OS (macOS/Linux/Windows)
+- Installs FFmpeg if missing (requires Homebrew on macOS, sudo on Linux)
+- Creates and configures a virtual environment
+- Installs PyTorch with optimal settings for your platform (CPU/GPU/MPS)
+- Installs all Python dependencies from requirements.txt
+- Guides you through Hugging Face token setup
+
+**Note:** First run will download models (~1-3GB depending on size). Subsequent runs use cached models.
+
 ## Architecture
 
 This repository implements a LangGraph-style agentic flow via a lightweight `StateGraph`.
@@ -15,14 +48,20 @@ The pipeline is defined as a sequence of state nodes that execute in order and p
 The core flow is:
 
 1. `transcription`
-   - Uses `src.agents.transcription_agent` to transcribe audio and optionally apply speaker diarization.
-   - Produces a structured transcript JSON with `transcript` and `segments`.
+   - Uses `src.agents.transcription_agent` to transcribe audio with Whisper and optionally apply speaker diarization with pyannote.audio
+   - Produces a structured transcript JSON with speaker-attributed segments
 2. `summary_generation`
-   - Uses `src.agents.summary_agent` to summarize the transcript into a structured JSON summary.
+   - Uses `src.agents.summary_agent` to generate executive summaries, key decisions, and discussion topics
 3. `action_extraction`
-   - Uses `src.agents.action_item_agent` to extract tasks, assignees, deadlines, priorities, and context quotes.
-4. `final_report`
-   - Assembles the transcript, summary, and action items into a single final report.
+   - Uses `src.agents.action_item_agent` to extract tasks, assignees, deadlines, and priorities
+4. `history_tracking`
+   - Uses `src.agents.action_history_agent` to persist action items in SQLite and flag overdue/recurring items
+5. `topic_continuity`
+   - Uses `src.agents.topic_continuity_agent` to index meeting topics in ChromaDB for cross-meeting search
+6. `escalation_check`
+   - Applies deterministic rules to flag recurring topics and overdue items for attention
+7. `final_report`
+   - Assembles all outputs into a comprehensive final report
 
 The workflow is built and executed in `src/state_graph.py`. Each `StateNode`
 directly invokes its relevant agent or tool, returns a partial state update, and
@@ -41,8 +80,8 @@ Summary Agent
       |
       v
 Action Item Agent
-  |
-  v
+      |
+      v
 Action History Agent
       |
       v
@@ -53,7 +92,20 @@ This design makes the pipeline easy to extend with new graph nodes or alternate 
 
 ## Installation
 
-### 1. System Dependencies
+### Requirements
+
+- **Python:** 3.9 or higher
+- **Internet connection:** Required for downloading models and dependencies
+- **Hugging Face account:** Required for pyannote speaker diarization (free)
+- **Platform-specific:** Homebrew (macOS) or sudo privileges (Linux) for system package installation
+
+> **Note:** The `setup.sh` script automatically handles FFmpeg and PyTorch installation. See Manual Installation section below for alternative setup.
+
+### Manual Installation (Alternative)
+
+If you prefer to install manually or the setup script doesn't work for your environment:
+
+#### 1. System Dependencies
 
 Install FFmpeg (required for audio decoding):
 
@@ -70,7 +122,7 @@ sudo apt-get install ffmpeg
 **Windows:**
 Download from https://ffmpeg.org/download.html or use `choco install ffmpeg`
 
-### 2. Python Environment
+#### 2. Python Environment
 
 Create and activate a virtual environment:
 
@@ -80,7 +132,7 @@ source .venv/bin/activate  # macOS/Linux
 # or on Windows: .venv\Scripts\activate
 ```
 
-### 3. Install PyTorch (MUST do this first)
+#### 3. Install PyTorch
 
 Install PyTorch using official instructions from https://pytorch.org/get-started/locally/
 
@@ -94,13 +146,13 @@ pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
 pip install torch torchaudio
 ```
 
-### 4. Install Python Dependencies
+#### 4. Install Python Dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 5. Set Up Hugging Face Token (Required for speaker diarization)
+#### 5. Set Up Hugging Face Token (Required for speaker diarization)
 
 1. Go to https://huggingface.co/settings/tokens and create a new token (read access is sufficient)
 2. Visit https://huggingface.co/pyannote/speaker-diarization-3.1 and accept the model's license
@@ -149,8 +201,8 @@ python scripts/run_action_items.py out.json --output actions.txt --format table
 ```
 
 ### 6) Run complete end-to-end pipeline
-The `StateGraph` is the workflow and orchestration entry point:
-`Transcription -> Summary Generation -> Action Extraction -> History Tracking -> Topic Continuity -> Escalation Check -> Final Report`.
+
+The `StateGraph` orchestrates the full workflow: Transcription → Summary → Action Items → History Tracking → Topic Continuity → Escalation → Final Report.
 
 ```bash
 .venv/bin/python3 -c "
@@ -167,13 +219,11 @@ print(state['final_report'])
 "
 ```
 
-This runs all three agents in a single StateGraph execution and produces:
-- `transcript.json`
-- `summary.json`
-- `action_items.json`
-- `history_report.json` (if requested)
-
-> Runs every processing agent and tool as a node in one StateGraph workflow.
+This produces:
+- `transcript.json` — speaker-attributed transcript
+- `summary.json` — structured meeting summary
+- `action_items.json` — extracted action items
+- `history_report.json` — action item health report with overdue/recurring flags
 
 ### 7) Launch the Gradio dashboard
 
@@ -187,33 +237,18 @@ or from the repository root with Make:
 make run-gradio
 ```
 
-The dashboard supports:
+The dashboard provides:
 
-- Natural-language questions through the **Ask Agents** tab, with automatic or explicit routing to action history, topic continuity, summary, transcript, and current action-item data
-- Read-only filtered questions such as “Which action items assigned to Mike are overdue?”
-- audio upload or transcript paste
-- speaker-attributed transcript viewer with timestamps
-- structured summary panel
-- action item Kanban dashboard with status updates
-- topic continuity graph
-- downloadable Markdown/PDF meeting report
-
-**Options:**
-- `--model` — Whisper model size: `tiny`, `base`, `small`, `medium`, `large` (default: `small`)
-- `--output` — Output JSON file path (default: `transcript.json`)
-- `--hf-token` — Hugging Face token for model inference (or use `HF_TOKEN` environment variable)
-
-**Action Items Extraction Options:**
-- `--format` — Output format: `json`, `markdown`, or `table` (default: `json`)
-- `--model` — Hugging Face model for extraction (default: `Qwen/Qwen2.5-7B-Instruct`)
-- `--hf-token` — Hugging Face API token
- - `--history-db` — SQLite file path for action item history (default: `action_history.db`)
- - `--history-report-output` — Optional health report JSON output path
- - `--reference-date` — Optional date for overdue computation, format `YYYY-MM-DD`
-
-The history database stores meeting metadata and structured summaries in a
-`meetings` table, then links each persisted action item back to its meeting via
-`meeting_id`.
+- **Audio upload** or transcript paste input
+- **Speaker-attributed transcript** viewer with timestamps
+- **Structured summary** panel (executive summary, decisions, topics)
+- **Action item Kanban board** with editable status updates (open/in-progress/completed)
+- **Action item health report** showing overdue and recurring items
+- **Escalation report** highlighting topics and actions requiring attention
+- **Topic continuity** display with recurring topics and related historical context
+- **Natural language queries** ("Ask Agents" tab) — e.g., "Which action items assigned to Mike are overdue?"
+- **Downloadable reports** in Markdown and PDF formats
+- **Meeting history browser** to load and review past meetings
 
 ## Output Format
 
@@ -274,6 +309,9 @@ See [docs/ACTION_ITEM_AGENT.md](docs/ACTION_ITEM_AGENT.md) for detailed document
 - This is a lightweight LangGraph-style implementation and can be replaced by the LangGraph package if durable execution or distributed checkpoints are needed
 - First run of each model size will download the model (~1-3GB depending on size)
 - Speaker diarization requires a Hugging Face token and gated model access
+- Sample audio files are included in the `amicorpus/` directory for testing
+- For production use, consider model hosting vs local inference tradeoffs and hardened extraction heuristics
+- The repository includes a Dockerfile for containerized deployment
 
 ## Quick Helpers
 

@@ -677,6 +677,95 @@ table.dataframe td {
   background: var(--slate-400);
 }
 
+/* ── Dropdown / Select ──────────────────────────────────────── */
+.dropdown {
+  position: relative !important;
+  width: 100% !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+.dropdown > div {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+.dropdown .dropdown-toggle {
+  background: white !important;
+  border: 2px solid var(--brand-300) !important;
+  color: var(--slate-800) !important;
+  padding: 10px 40px 10px 14px !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  border-radius: var(--radius-sm) !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
+  min-height: 42px;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
+  transition: all var(--transition) !important;
+  line-height: 1.4 !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  width: 100% !important;
+}
+.dropdown .dropdown-toggle:hover {
+  border-color: var(--brand-500) !important;
+  box-shadow: 0 3px 10px rgba(99,102,241,0.18) !important;
+}
+.dropdown .dropdown-menu {
+  background: white !important;
+  border: 1px solid var(--slate-200) !important;
+  border-radius: var(--radius-sm) !important;
+  box-shadow: var(--shadow-lg) !important;
+  padding: 6px !important;
+  max-height: 280px;
+  overflow-y: auto;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 1000 !important;
+}
+.dropdown .dropdown-item {
+  padding: 10px 12px !important;
+  font-size: 13px !important;
+  color: var(--slate-700) !important;
+  border-radius: 6px !important;
+  transition: background 120ms ease !important;
+  cursor: pointer;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  display: block !important;
+  visibility: visible !important;
+}
+.dropdown .dropdown-item:hover,
+.dropdown .dropdown-item:focus {
+  background: var(--brand-50) !important;
+  color: var(--brand-700) !important;
+}
+.dropdown .dropdown-item.selected {
+  background: var(--brand-100) !important;
+  color: var(--brand-900) !important;
+  font-weight: 700 !important;
+}
+.dropdown .dropdown-toggle::after {
+  border-right: 2px solid var(--slate-500) !important;
+  border-bottom: 2px solid var(--slate-500) !important;
+  margin-left: 8px;
+}
+
+/* Force Gradio dropdown to be visible */
+.gradio-container .dropdown,
+.gradio-container .dropdown-component,
+.prose .dropdown {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: relative !important;
+}
+
 /* ── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 820px) {
   .gradio-container { padding: 12px 16px 32px !important; }
@@ -1868,26 +1957,34 @@ def launch_ui() -> None:
                         clear_btn = gr.Button("🗑️ Clear", elem_classes="secondary-btn", scale=1)
 
                 # ── Saved Meetings Card ──
-                with gr.Group(elem_classes=["glass-card", "padded"], visible=False):
-                    gr.Markdown("#### 📂 Saved Meetings")
+                with gr.Group(elem_classes=["glass-card", "padded"], visible=True):
+                    gr.HTML(
+                        '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">'
+                        '<div style="font-size:32px;">📂</div>'
+                        '<div>'
+                        '<h3 style="margin:0;color:var(--brand-700);font-size:18px;font-weight:700;">Saved Meetings</h3>'
+                        '<p style="margin:4px 0 0 0;color:var(--slate-500);font-size:12px;">Load and review past meeting analyses</p>'
+                        '</div>'
+                        '</div>'
+                    )
                     with gr.Row():
                         meeting_selector = gr.Dropdown(
-                            label="Select a meeting",
+                            label="Select meeting",
                             choices=_list_meeting_choices(),
                             value=None,
                             interactive=True,
                             scale=3,
                         )
                         refresh_meetings_button = gr.Button(
-                            "🔄",
+                            "🔄 Refresh",
                             elem_classes="secondary-btn",
                             scale=1,
                             min_width=44,
                         )
                     load_meeting_button = gr.Button(
-                        "📥 Load Selected Meeting",
-                        elem_classes="secondary-btn",
-                        variant="secondary",
+                        "📥 Load Meeting",
+                        elem_classes="gradient-btn",
+                        variant="primary",
                     )
 
                 # ── Pipeline Status ──
@@ -2009,13 +2106,22 @@ def launch_ui() -> None:
         ]
         clear_btn.click(fn=clear_all, outputs=clear_btn_outputs)
 
+        def _on_app_load(state: Dict[str, Any]) -> Tuple[Any, str]:
+            # Refresh meeting choices from database
+            choices_update, status_msg = _refresh_meeting_choices()
+            # Restore UI state (returns 11 values)
+            restored = _restore_ui_from_state(state)
+            # Return exactly 12 values: meeting_selector update, pipeline_status, and 10 values from restored UI state
+            return choices_update, status_msg, restored[0], restored[1], restored[2], restored[3], restored[4], restored[5], restored[6], restored[7], restored[8], restored[9]
+
         demo.load(
-            fn=_restore_ui_from_state,
+            fn=_on_app_load,
             inputs=[persisted_ui_state],
             outputs=[
+                meeting_selector, pipeline_status,
                 meeting_details_output, transcript_view, transcript_text_output, summary_output,
                 action_table, kanban_output, escalations_output, report_md_file, report_pdf_file,
-                persisted_ui_state, pipeline_status,
+                persisted_ui_state,
             ],
         )
 
