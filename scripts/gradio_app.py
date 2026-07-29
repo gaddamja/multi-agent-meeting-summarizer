@@ -2074,7 +2074,21 @@ def launch_ui() -> None:
             }
             choices = _list_meeting_choices()
             selected = choices[0] if choices else None
-            return result[:10] + (state_payload, gr.update(choices=choices, value=selected), '<div class="success-toast">✅ Meeting processed and saved successfully.</div>')
+            # Return exactly 12 values matching the output components
+            return (
+                result[0],  # meeting_details_html
+                result[1],  # transcript_view (html)
+                result[2],  # transcript_text
+                result[3],  # summary_output (html)
+                result[4],  # action_table
+                result[5],  # kanban_output
+                result[6],  # topic_continuity_html
+                result[7],  # escalations_output
+                state_payload,  # persisted_ui_state
+                result[8],  # report_md_file
+                result[9],  # report_pdf_file
+                gr.update(choices=choices, value=selected),  # meeting_selector
+            )
 
         process_btn_inputs = [audio_input, transcript_input, hf_token, whisper_model, summary_model, action_model, meeting_name, skip_diarization]
         process_btn_outputs = [
@@ -2096,7 +2110,7 @@ def launch_ui() -> None:
             empty_escalations = _empty_state_html("🚨", "No escalations", "Process a meeting to see escalation report.")
             return (
                 empty_details, empty_transcript, "", empty_summary, [],
-                empty_kanban, "", empty_escalations, None, None, empty, "", "",
+                empty_kanban, "", empty_escalations, None, None, empty, "",
             )
 
         clear_btn_outputs = [
