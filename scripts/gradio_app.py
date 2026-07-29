@@ -1828,7 +1828,7 @@ def process_meeting_with_error_handling(
     except Exception as e:
         error_text = html.escape(str(e))
         error_html = f'<div class="error-toast">❌ <strong>Error:</strong> {error_text}</div>'
-        return (error_html, error_html, error_text, error_html, [], "", "", None, None, {}, [], {})
+        return (error_html, error_html, error_text, error_html, [], "", "", "", None, None, {}, [], {})
 
 
 def _chat_with_agents(
