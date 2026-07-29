@@ -34,7 +34,7 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer
 from src.agents.action_history_agent import ActionHistoryAgent, VALID_STATUSES
 from src.agents.action_item_agent import ActionItemList
 from src.agents.nlp_query_agent import NLPQueryAgent, TARGETS
-from src.state_graph import run_meeting_workflow
+from src.langgraph_workflow import run_meeting_workflow_langgraph as run_meeting_workflow
 
 DEFAULT_HISTORY_DB = "action_history.db"
 DEFAULT_WHISPER_MODEL = "small"
@@ -1536,7 +1536,7 @@ def _load_meeting_state(meeting_id: str, db_path: str = DEFAULT_HISTORY_DB) -> D
     state["action_items"] = _rows_to_action_objects(action_rows)
     state["kanban_html"] = _build_kanban_html(state["action_items"])
     # Compute escalation report for loaded meeting
-    from src.state_graph import escalation_node
+    from src.langgraph_workflow import escalation_node
     from src.agents.action_history_agent import ActionHistoryAgent
     agent = ActionHistoryAgent(db_path=DEFAULT_HISTORY_DB)
     health_report = agent.build_health_report(
