@@ -1349,6 +1349,9 @@ def _file_output_value(path: Any) -> Optional[str]:
     file_path = Path(str(path)).expanduser()
     if not file_path.is_file():
         return None
+    # Ensure we never return a directory path
+    if file_path.is_dir():
+        return None
     return str(file_path)
 
 
