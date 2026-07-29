@@ -6,7 +6,7 @@ from src.agents.action_item_agent import ActionItemList
 
 
 class GradioWorkflowTests(unittest.TestCase):
-    def test_manual_transcript_uses_state_graph_workflow(self):
+    def test_manual_transcript_uses_langgraph_workflow(self):
         workflow_result = {
             "transcript_data": {"transcript": "A short meeting.", "segments": []},
             "summary": {"executive_summary": "A short meeting."},

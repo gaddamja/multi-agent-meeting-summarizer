@@ -1,10 +1,10 @@
 """LangGraph-based workflow for the meeting-processing pipeline.
 
-This is an alternative implementation using the LangGraph library instead of
-the custom StateGraph. It provides the same functionality with additional
-features like checkpointing, persistence, and conditional routing.
+This module implements the meeting processing workflow using LangGraph,
+providing built-in checkpointing, state persistence, and support for
+conditional routing.
 
-To use this instead of the custom StateGraph:
+Usage:
     from src.langgraph_workflow import run_meeting_workflow_langgraph
     state = run_meeting_workflow_langgraph(initial_state)
 """
@@ -29,7 +29,7 @@ class AgentState(Dict[str, Any]):
     pass
 
 
-# Node functions (these are the same as in state_graph.py)
+# Node functions (workflow step implementations)
 def _log(message: str) -> None:
     print(f"[langgraph] {message}")
 

@@ -42,8 +42,7 @@ The setup script automatically:
 
 ## Architecture
 
-This repository implements a LangGraph-style agentic flow via a lightweight `StateGraph`.
-The pipeline is defined as a sequence of state nodes that execute in order and pass context between them.
+This repository implements a multi-agent workflow using **LangGraph**, a framework for building stateful, multi-step agentic applications. The pipeline is defined as a sequence of nodes that execute in order and pass context between them.
 
 The core flow is:
 
@@ -63,9 +62,10 @@ The core flow is:
 7. `final_report`
    - Assembles all outputs into a comprehensive final report
 
-The workflow is built and executed in `src/state_graph.py`. Each `StateNode`
+The workflow is built and executed in `src/langgraph_workflow.py`. Each node
 directly invokes its relevant agent or tool, returns a partial state update, and
-declares its `next_state` transition. There is no additional orchestrator layer.
+transitions to the next node. LangGraph provides the orchestration layer with
+built-in checkpointing, state management, and support for conditional routing.
 
 A simple representation of the flow:
 
@@ -80,8 +80,8 @@ Summary Agent
       |
       v
 Action Item Agent
-      |
-      v
+  |
+  v
 Action History Agent
       |
       v
@@ -202,12 +202,12 @@ python scripts/run_action_items.py out.json --output actions.txt --format table
 
 ### 6) Run complete end-to-end pipeline
 
-The `StateGraph` orchestrates the full workflow: Transcription → Summary → Action Items → History Tracking → Topic Continuity → Escalation → Final Report.
+The LangGraph workflow orchestrates the full pipeline: Transcription → Summary → Action Items → History Tracking → Topic Continuity → Escalation → Final Report.
 
 ```bash
 .venv/bin/python3 -c "
-from src.state_graph import run_meeting_workflow
-state = run_meeting_workflow({
+from src.langgraph_workflow import run_meeting_workflow_langgraph
+state = run_meeting_workflow_langgraph({
     'audio_path': 'sample_audio.mp3',
     'transcript_output': 'transcript.json',
     'summary_output': 'summary.json',
@@ -306,7 +306,7 @@ See [docs/ACTION_ITEM_AGENT.md](docs/ACTION_ITEM_AGENT.md) for detailed document
 
 ## Notes
 
-- This is a lightweight LangGraph-style implementation and can be replaced by the LangGraph package if durable execution or distributed checkpoints are needed
+- This project uses **LangGraph** for workflow orchestration, providing built-in checkpointing, state persistence, and support for conditional routing
 - First run of each model size will download the model (~1-3GB depending on size)
 - Speaker diarization requires a Hugging Face token and gated model access
 - Sample audio files are included in the `amicorpus/` directory for testing
